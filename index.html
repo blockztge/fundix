@@ -556,14 +556,19 @@ function Onboarding({ onDone }) {
 }
 
 // ── HOME ──────────────────────────────────────────────────────
-function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes, onSumate, onLogin, rol, user }) {
+function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes, onSumate, onLogin, rol, user, onCambiarRol }) {
   const esComprador = rol === "comprador";
 
   return (
     React.createElement('div', { className: "home fade" ,}
-      , React.createElement('div', null
-        , React.createElement('div', { className: "home-label",}, "FUNDIX")
-        , React.createElement('div', { className: "home-title",}, esComprador ? "Panel del comprador" : "¿Qué necesitás hacer hoy?")
+      , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"flex-start"},}
+        , React.createElement('div', null
+          , React.createElement('div', { className: "home-label",}, "FUNDIX")
+          , React.createElement('div', { className: "home-title",}, esComprador ? "Panel del comprador" : "¿Qué necesitás hacer hoy?")
+        )
+        , React.createElement('button', { onClick: onCambiarRol, style: {background:"rgba(200,162,39,0.08)",border:"1px solid rgba(200,162,39,0.2)",borderRadius:20,padding:"5px 10px",fontSize:10,color:"#C8A227",fontFamily:"DM Mono,monospace",cursor:"pointer",letterSpacing:1,flexShrink:0,marginTop:4},}
+          , esComprador?"▼ COMPRADOR":"▼ VENDEDOR"
+        )
       )
 
       /* Card principal según rol */
@@ -982,7 +987,7 @@ const S = {
 };
 
 // ── LOGIN ─────────────────────────────────────────────────────
-function LoginScreen({ onLogin, onRegister }) {
+function LoginScreen({ onLogin, onRegister, onBack }) {
   const [method, setMethod] = useState("phone");
   const [phone, setPhone]   = useState("");
   const [email, setEmail]   = useState("");
@@ -991,6 +996,10 @@ function LoginScreen({ onLogin, onRegister }) {
 
   if (otp) return (
     React.createElement('div', { style: S.wrap, className: "fade",}
+      , React.createElement('div', { onClick: onBack, style: {display:"flex",alignItems:"center",gap:6,marginBottom:8,cursor:"pointer",width:"fit-content"},}
+        , React.createElement('svg', { width: 18, height: 18, viewBox: "0 0 24 24"   , fill: "none", stroke: "#7A7248", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round",}, React.createElement('polyline', { points: "15 18 9 12 15 6"     ,}))
+        , React.createElement('span', { style: {fontSize:12,color:"#7A7248",fontFamily:"DM Sans,sans-serif"},}, "Volver")
+      )
       , React.createElement('div', { style: S.logo,}, "FUNDIX")
       , React.createElement('div', { style: S.title,}, "Verificá tu número"  )
       , React.createElement('div', { style: S.sub,}, "Enviamos un código de 6 dígitos a "       , phone)
@@ -1006,6 +1015,10 @@ function LoginScreen({ onLogin, onRegister }) {
 
   return (
     React.createElement('div', { style: S.wrap, className: "fade",}
+      , React.createElement('div', { onClick: onBack, style: {display:"flex",alignItems:"center",gap:6,marginBottom:8,cursor:"pointer",width:"fit-content"},}
+        , React.createElement('svg', { width: 18, height: 18, viewBox: "0 0 24 24"   , fill: "none", stroke: "#7A7248", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round",}, React.createElement('polyline', { points: "15 18 9 12 15 6"     ,}))
+        , React.createElement('span', { style: {fontSize:12,color:"#7A7248",fontFamily:"DM Sans,sans-serif"},}, "Volver")
+      )
       , React.createElement('div', { style: S.logo,}, "FUNDIX")
       , React.createElement('div', { style: S.title,}, "Ingresá a tu cuenta"   )
       , React.createElement('div', { style: S.sub,}, "Comprá, vendé y consultá precios de metales"      )
@@ -2564,7 +2577,8 @@ function Fundix() {
                             onRetiro: ()=>setView(gated("retiro")),
                             onB2B: ()=>setView(gated("b2b")),
                             onPlanes: ()=>setView("planes"), onSumate: ()=>setView("sumate"),
-                            onLogin: ()=>setView("login"),});
+                            onLogin: ()=>setView("login"),
+                            onCambiarRol: ()=>{ try{localStorage.removeItem("fundix_rol");}catch(e){} setRol("vendedor"); setView("onboarding"); },});
 
       case "pick-metal": return React.createElement(PickMetal, { onBack: goHome, onNext: m=>{setSelMetal(m);setView("enter-kg");},});
       case "enter-kg":   return React.createElement(EnterKg, { metal: selMetal, onBack: ()=>setView("pick-metal"), onResult: kg=>{setSelKg(kg);setView("result");},});
