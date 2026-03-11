@@ -556,7 +556,7 @@ function Onboarding({ onDone }) {
 }
 
 // ── HOME ──────────────────────────────────────────────────────
-function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes, onSumate, onLogin, rol, user, onCambiarRol }) {
+function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes, onSumate, onLogin, rol, user, onCambiarRol, onPublicar }) {
   const esComprador = rol === "comprador";
 
   return (
@@ -585,6 +585,20 @@ function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes,
           , React.createElement('div', { className: "bc-title",}, "¿Cuánto vale lo que tengo?"    )
           , React.createElement('div', { className: "bc-sub",}, "Calculá el precio justo de tu metal en segundos."        )
           , React.createElement('div', { className: "bc-arrow",}, React.createElement(Icon.ChevronRight, null ))
+        )
+      )
+
+      /* Publicar material — solo vendedor */
+      , !esComprador && (
+        React.createElement('div', { onClick: onPublicar, style: {background:"rgba(200,162,39,0.06)",border:"1px dashed rgba(200,162,39,0.35)",borderRadius:16,padding:"14px 18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"},}
+          , React.createElement('div', { style: {width:38,height:38,borderRadius:"50%",background:"rgba(200,162,39,0.12)",border:"1px solid rgba(200,162,39,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+            , React.createElement('svg', { width: 18, height: 18, viewBox: "0 0 24 24"   , fill: "none", stroke: C.brand, strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round",}, React.createElement('line', { x1: "12", y1: "5", x2: "12", y2: "19",}), React.createElement('line', { x1: "5", y1: "12", x2: "19", y2: "12",}))
+          )
+          , React.createElement('div', { style: {flex:1},}
+            , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:C.text,marginBottom:2},}, "Publicar material" )
+            , React.createElement('div', { style: {fontSize:11,color:C.muted},}, "Avisá a compradores de tu zona que tenés material listo."         )
+          )
+          , React.createElement(Icon.ChevronRight, { size: 16, color: C.muted,})
         )
       )
 
@@ -747,7 +761,7 @@ function EnterKg({ metal, onBack, onResult }) {
 }
 
 // ── RESULT ────────────────────────────────────────────────────
-function Result({ metal, kg, onDonde, onBack }) {
+function Result({ metal, kg, onDonde, onBack, onPublicar }) {
   const total = Math.round(metal.kg * kg);
   const min   = Math.round(metal.kg * kg * 0.85);
 
@@ -768,6 +782,10 @@ function Result({ metal, kg, onDonde, onBack }) {
           )
         )
         , React.createElement('button', { className: "btn-primary", style: { marginBottom: 8 }, onClick: onDonde,}, "📍 Ver dónde venderlo"
+
+        )
+        , React.createElement('button', { onClick: onPublicar, style: {width:"100%",background:"rgba(200,162,39,0.08)",border:"1px solid rgba(200,162,39,0.3)",borderRadius:14,padding:14,fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:14,color:C.brand,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8},}
+          , React.createElement('svg', { width: 15, height: 15, viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round",}, React.createElement('line', { x1: "12", y1: "5", x2: "12", y2: "19",}), React.createElement('line', { x1: "5", y1: "12", x2: "19", y2: "12",})), "Publicar este material"
 
         )
         , React.createElement('div', { className: "result-note",}, "Precios actualizados diariamente según cotización internacional."     )
@@ -792,56 +810,89 @@ function DondeVender({ metal, onBack, compradores, vendedores, onVerPerfil, onVe
         , React.createElement(Icon.ArrowLeft, null ), React.createElement('span', { className: "back-label",}, "Volver")
       )
       , React.createElement('div', { className: "donde-screen",}
-        , React.createElement('div', { className: "wiz-q",}, esComprador ? "Vendedores cercanos" : "Compradores cercanos")
-        , React.createElement('div', { className: "wiz-hint",}, esComprador ? "Vendedores con material disponible en tu zona." : metal ? `Precios para ${metal.name} · ordenados por mejor precio.` : "Ordenados por precio y distancia.")
+        , React.createElement('div', { className: "wiz-q",}, esComprador ? "Material disponible" : "Compradores cercanos")
+        , React.createElement('div', { className: "wiz-hint",}, esComprador ? "Alertas de vendedores con material listo en tu zona." : metal ? `Precios para ${metal.name} · ordenados por mejor precio.` : "Ordenados por precio y distancia.")
         , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6,background:"#141210",border:"1px solid #242010",borderRadius:10,padding:"8px 12px",marginBottom:8},}
           , React.createElement('div', { style: {width:6,height:6,borderRadius:"50%",background:"#00C896",flexShrink:0,boxShadow:"0 0 5px #00C896"},})
           , React.createElement('span', { style: {fontSize:10,color:"#7A7248"},}, esComprador ? "Vendedores verificados · Actualizados hoy" : "Precios declarados por cada comprador · Actualizados esta semana")
         )
 
-        /* Vista COMPRADOR — ve vendedores */
+        /* Vista COMPRADOR — alertas de material disponible */
         , esComprador && (
           React.createElement(React.Fragment, null
-            , vendedores.length === 0 && (
-              React.createElement('div', { style: {textAlign:"center",padding:"32px 20px"},}
-                , React.createElement('div', { style: {fontSize:40,marginBottom:12},}, "📦")
-                , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:"#F5F0DC",marginBottom:6},}, "Sin vendedores todavía"  )
+            /* Banner explicativo */
+            , React.createElement('div', { style: {background:"rgba(200,162,39,0.05)",border:"1px solid rgba(200,162,39,0.15)",borderRadius:12,padding:"12px 14px",marginBottom:4,display:"flex",gap:10,alignItems:"flex-start"},}
+              , React.createElement('span', { style: {fontSize:18,flexShrink:0},}, "🔔")
+              , React.createElement('div', null
+                , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:C.text,marginBottom:2},}, "Material disponible cerca tuyo"   )
+                , React.createElement('div', { style: {fontSize:11,color:C.muted,lineHeight:1.6},}, "Vendedores que cargaron material recientemente en tu zona. Contactalos antes que la competencia."            )
               )
             )
-            , vendedores.map(v => (
-              React.createElement('div', { key: v.id, className: "comp-card", onClick: ()=>onVerPerfilVendedor&&onVerPerfilVendedor(v), style: {cursor:"pointer"},}
-                , React.createElement('div', { className: "comp-top",}
-                  , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8,flex:1},}
-                    , React.createElement('div', { style: {width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#C8A227,#8A6C10)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#09080A",flexShrink:0},}, v.name[0])
-                    , React.createElement('div', null
-                      , React.createElement('div', { className: "comp-name", style: {marginBottom:2},}, v.name)
-                      , React.createElement('div', { style: {display:"flex",gap:6,alignItems:"center"},}
-                        , v.verificado && React.createElement('span', { style: {fontSize:8,background:"rgba(58,143,216,0.1)",border:"1px solid rgba(58,143,216,0.3)",borderRadius:4,padding:"1px 5px",color:"#3A8FD8",fontFamily:"DM Mono,monospace"},}, "✓ VERIFICADO" )
-                        , React.createElement('span', { style: {fontSize:10,color:"#7A7248"},}, "📍 " , v.zona, " · "  , v.dist)
-                      )
+
+            /* Cards de alertas */
+            , [
+              { id:1, zona:"Lanús",      tiempo:"hace 20 min", metales:[{s:"Cu",c:"#B87333"}], kg:38,  nombre:"Carlos M.",   tel:"11-4521-8890", verificado:true  },
+              { id:2, zona:"Avellaneda", tiempo:"hace 1 hora",  metales:[{s:"Al",c:"#A8B8C0"},{s:"Fe",c:"#7A8A90"}], kg:85, nombre:"Jorge P.", tel:"11-3344-5566", verificado:true  },
+              { id:3, zona:"Quilmes",    tiempo:"hace 2 horas", metales:[{s:"Pb",c:"#8899AA"}], kg:22, nombre:"Anónimo",     tel:null,            verificado:false },
+              { id:4, zona:"Lomas",      tiempo:"hace 3 horas", metales:[{s:"Cu",c:"#B87333"},{s:"Al",c:"#A8B8C0"}], kg:15, nombre:"María G.", tel:"11-5678-9900", verificado:true  },
+            ].map(a => (
+              React.createElement('div', { key: a.id, className: "comp-card",}
+                /* Header */
+                , React.createElement('div', { className: "comp-top", style: {marginBottom:10},}
+                  , React.createElement('div', { style: {flex:1},}
+                    , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6,marginBottom:3},}
+                      , React.createElement('div', { style: {width:8,height:8,borderRadius:"50%",background:C.priceGood,flexShrink:0},})
+                      , React.createElement('span', { style: {fontSize:11,color:C.priceGood,fontFamily:"DM Mono,monospace",fontWeight:700},}, "NUEVO")
+                      , React.createElement('span', { style: {fontSize:10,color:C.muted},}, a.tiempo)
+                    )
+                    , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6},}
+                      , React.createElement(Icon.MapPin, { size: 12, color: C.muted,})
+                      , React.createElement('span', { style: {fontSize:13,fontWeight:700,color:C.text},}, a.zona)
+                      , a.verificado && React.createElement('span', { style: {fontSize:8,background:"rgba(58,143,216,0.1)",border:"1px solid rgba(58,143,216,0.3)",borderRadius:4,padding:"1px 5px",color:"#3A8FD8",fontFamily:"DM Mono,monospace"},}, "✓ VERIFICADO" )
                     )
                   )
-                  , React.createElement('div', { style: {background:v.disponible?"rgba(0,200,150,0.1)":"rgba(224,48,80,0.1)",border:`1px solid ${v.disponible?"rgba(0,200,150,0.3)":"rgba(224,48,80,0.3)"}`,borderRadius:6,padding:"3px 8px",fontSize:9,color:v.disponible?"#00C896":"#E03050",fontFamily:"DM Mono,monospace",flexShrink:0},}
-                    , v.disponible?"DISPONIBLE":"NO DISPONIBLE"
+                  , React.createElement('div', { style: {textAlign:"right",flexShrink:0},}
+                    , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:20,fontWeight:600,color:C.text},}, a.kg, " kg" )
+                    , React.createElement('div', { style: {fontSize:10,color:C.muted},}, "aprox.")
                   )
                 )
-                /* Material disponible */
-                , React.createElement('div', { style: {display:"flex",gap:6,margin:"10px 0",flexWrap:"wrap"},}
-                  , v.metales.map(m=>{
-                    const metal = METALS.find(x=>x.symbol===m);
-                    return React.createElement('span', { key: m, style: {background:"rgba(200,162,39,0.08)",border:"1px solid rgba(200,162,39,0.2)",borderRadius:6,padding:"3px 8px",fontSize:10,fontWeight:700,color:metal?metal.color:"#C8A227",fontFamily:"DM Mono,monospace"},}, m);
-                  })
-                  , React.createElement('span', { style: {fontSize:10,color:"#7A7248",alignSelf:"center"},}, "· " , v.kg, " kg aprox."  )
+
+                /* Metales */
+                , React.createElement('div', { style: {display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"},}
+                  , a.metales.map(m=>(
+                    React.createElement('div', { key: m.s, style: {display:"flex",alignItems:"center",gap:5,background:"rgba(200,162,39,0.06)",border:`1px solid ${m.c}40`,borderRadius:8,padding:"4px 8px"},}
+                      , React.createElement('div', { style: {width:18,height:18,borderRadius:"50%",border:`1px solid ${m.c}`,display:"flex",alignItems:"center",justifyContent:"center"},}
+                        , React.createElement('span', { style: {fontFamily:"DM Mono,monospace",fontSize:7,fontWeight:700,color:m.c},}, m.s)
+                      )
+                      , React.createElement('span', { style: {fontSize:11,fontWeight:700,color:m.c,fontFamily:"DM Mono,monospace"},}, _optionalChain([METALS, 'access', _5 => _5.find, 'call', _6 => _6(x=>x.symbol===m.s), 'optionalAccess', _7 => _7.name]) || m.s)
+                    )
+                  ))
                 )
-                , React.createElement('div', { className: "comp-meta",}
-                  , React.createElement('div', { className: "comp-meta-item",}, React.createElement(Icon.Star, null ), v.rating, " (" , v.reviews, ")")
-                )
+
+                /* Acciones */
                 , React.createElement('div', { className: "comp-actions",}
-                  , React.createElement('button', { className: "btn-call",}, React.createElement(Icon.Phone, null ), React.createElement('span', null, "Llamar"))
-                  , React.createElement('button', { className: "btn-wa",}, React.createElement(Icon.MessageCircle, null ), React.createElement('span', null, "WhatsApp"))
+                  , a.tel ? (
+                    React.createElement(React.Fragment, null
+                      , React.createElement('button', { className: "btn-call",}, React.createElement(Icon.Phone, null ), React.createElement('span', null, "Llamar"))
+                      , React.createElement('button', { className: "btn-wa",}, React.createElement(Icon.MessageCircle, null ), React.createElement('span', null, "WhatsApp"))
+                    )
+                  ) : (
+                    React.createElement('button', { className: "btn-call", style: {flex:1,opacity:0.5,cursor:"not-allowed"},}
+                      , React.createElement(Icon.Phone, null ), React.createElement('span', null, "Contacto anónimo — no disponible"    )
+                    )
+                  )
                 )
               )
             ))
+
+            /* CTA registrarse para recibir alertas */
+            , React.createElement('div', { style: {background:C.card2,border:`1px solid ${C.border}`,borderRadius:14,padding:16,textAlign:"center",marginTop:4},}
+              , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:C.text,marginBottom:4},}, "¿Querés recibir estas alertas en tiempo real?"      )
+              , React.createElement('div', { style: {fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.6},}, "Activá las notificaciones push y te avisamos cada vez que alguien cargue material en tu zona."               )
+              , React.createElement('button', { style: {background:C.brand,color:C.dark,border:"none",borderRadius:10,padding:"10px 20px",fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"},}, "Activar alertas"
+
+              )
+            )
           )
         )
 
@@ -864,7 +915,23 @@ function DondeVender({ metal, onBack, compradores, vendedores, onVerPerfil, onVe
                 , React.createElement('div', { className: "price-row",}
                   , React.createElement('div', null
                     , React.createElement('div', { className: "price-big", style: { color: priceColor(c.nivel) },}, "$", priceFor(c), "/kg")
-                    , React.createElement('div', { className: "price-label-sm",}, metal ? `precio por ${metal.name}` : "precio referencial")
+                    , React.createElement('div', { className: "price-label-sm", style: {display:"flex",alignItems:"center",gap:5},}
+                      , metal ? (
+                        React.createElement(React.Fragment, null
+                          , React.createElement('div', { style: {width:20,height:20,borderRadius:"50%",border:`1px solid ${metal.color}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+                            , React.createElement('span', { style: {fontFamily:"DM Mono,monospace",fontSize:8,fontWeight:700,color:metal.color},}, metal.symbol)
+                          )
+                          , React.createElement('span', null, "precio por "  , metal.name)
+                        )
+                      ) : (
+                        React.createElement(React.Fragment, null
+                          , React.createElement('div', { style: {width:20,height:20,borderRadius:"50%",border:"1px solid #B87333",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+                            , React.createElement('span', { style: {fontFamily:"DM Mono,monospace",fontSize:8,fontWeight:700,color:"#B87333"},}, "Cu")
+                          )
+                          , React.createElement('span', null, "precio referencial" )
+                        )
+                      )
+                    )
                   )
                   , React.createElement('div', { className: `nivel-tag ${c.nivel}`,}
                     , c.nivel === "alto" ? "PRECIO ALTO" : c.nivel === "normal" ? "PRECIO NORMAL" : "PRECIO BAJO"
@@ -1160,7 +1227,7 @@ function RegisterScreen({ onBack, onDone }) {
 }
 
 // ── HISTORIAL ─────────────────────────────────────────────────
-function HistorialScreen({ onBack }) {
+function HistorialScreen({ onBack, rol }) {
   const ventas = [
     {fecha:"08/03/2026",metal:"Cobre",   kg:12, precio:8750, comprador:"Depósito San Martín", total:105000},
     {fecha:"24/02/2026",metal:"Aluminio",kg:30, precio:1950, comprador:"Centro Acopio Sur",    total:58500},
@@ -1171,10 +1238,10 @@ function HistorialScreen({ onBack }) {
     React.createElement('div', { className: "fade", style: {paddingBottom:100},}
       , React.createElement('div', { className: "back", onClick: onBack,}, React.createElement(Icon.ArrowLeft, null), React.createElement('span', { className: "back-label",}, "Volver"))
       , React.createElement('div', { style: {padding:"0 20px"},}
-        , React.createElement('div', { className: "wiz-q",}, "Mis ventas" )
+        , React.createElement('div', { className: "wiz-q",}, rol==="comprador" ? "Mis compras" : "Mis ventas")
         , React.createElement('div', { className: "wiz-hint",}, "Historial de operaciones realizadas."   )
         , React.createElement('div', { style: {background:"#141210",border:"1px solid #242010",borderRadius:16,padding:16,marginBottom:16},}
-          , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:"#7A7248",letterSpacing:2,marginBottom:6},}, "TOTAL VENDIDO ESTE MES"   )
+          , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:"#7A7248",letterSpacing:2,marginBottom:6},}, rol==="comprador" ? "TOTAL COMPRADO ESTE MES" : "TOTAL VENDIDO ESTE MES")
           , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:36,fontWeight:500,color:"#00C896",marginBottom:4},}, "$", totalMes.toLocaleString("es-AR"))
           , React.createElement('div', { style: {fontSize:12,color:"#7A7248"},}, "3 operaciones · 47 kg totales"     )
         )
@@ -1512,10 +1579,10 @@ function PlanesCompradorScreen({ onBack }) {
 }
 
 // ── PERFIL ────────────────────────────────────────────────────
-function ProfileScreen({ user, rol, onBack, onLogout, onPlanes, onPanel, onInsignias }) {
+function ProfileScreen({ user, rol, onBack, onLogout, onPlanes, onPanel, onInsignias, onPublicar, onSumate, onCambiarRol }) {
   const menuItems = [
     {icon:"🪪", label:"Mis datos personales",   sub:"Nombre, DNI, domicilio"},
-    {icon:"✅", label:"Estado de verificación",  sub: _optionalChain([user, 'optionalAccess', _5 => _5.verified])?"Identidad verificada":"Pendiente de revisión"},
+    {icon:"✅", label:"Estado de verificación",  sub: _optionalChain([user, 'optionalAccess', _8 => _8.verified])?"Identidad verificada":"Pendiente de revisión"},
     {icon:"🔔", label:"Notificaciones",           sub:"Alertas de precio y movimientos"},
     {icon:"🏅", label:"Mis insignias",             sub:"Tu nivel y progreso en Fundix"},
     {icon:"🔒", label:"Seguridad",                sub:"Contraseña y dispositivos"},
@@ -1525,9 +1592,9 @@ function ProfileScreen({ user, rol, onBack, onLogout, onPlanes, onPanel, onInsig
     React.createElement('div', { style: {padding:"0 20px 100px"}, className: "fade",}
       , React.createElement('div', { style: {textAlign:"center",padding:"24px 0 20px"},}
         , React.createElement('div', { style: {width:72,height:72,borderRadius:"50%",background:`linear-gradient(135deg,#C8A227,#8A6C10)`,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#09080A",fontFamily:"DM Sans,sans-serif"},}
-          , (_optionalChain([user, 'optionalAccess', _6 => _6.name])||"U")[0].toUpperCase()
+          , (_optionalChain([user, 'optionalAccess', _9 => _9.name])||"U")[0].toUpperCase()
         )
-        , React.createElement('div', { style: {fontSize:18,fontWeight:700,color:"#F5F0DC",marginBottom:6},}, _optionalChain([user, 'optionalAccess', _7 => _7.name])||"Usuario")
+        , React.createElement('div', { style: {fontSize:18,fontWeight:700,color:"#F5F0DC",marginBottom:6},}, _optionalChain([user, 'optionalAccess', _10 => _10.name])||"Usuario")
         , React.createElement('div', { style: {display:"inline-flex",alignItems:"center",gap:6,background:"#1C1814",border:"1px solid #242010",borderRadius:20,padding:"4px 14px",fontSize:10,color:"#7A7248",fontFamily:"DM Mono,monospace",letterSpacing:1},}
           , rol==="comprador"?"🏭 COMPRADOR":"📦 VENDEDOR"
         )
@@ -1584,6 +1651,7 @@ function ProfileScreen({ user, rol, onBack, onLogout, onPlanes, onPanel, onInsig
 
             )
           )
+
         )
       )
 
@@ -1787,7 +1855,7 @@ function ReseñaScreen({ comprador, onBack, onDone }) {
       , React.createElement('div', { className: "back", onClick: onBack,}, React.createElement(Icon.ArrowLeft, null), React.createElement('span', { className: "back-label",}, "Volver"))
       , React.createElement('div', { style: {padding:"0 20px"},}
         , React.createElement('div', { className: "wiz-q",}, "Calificá tu experiencia"  )
-        , React.createElement('div', { className: "wiz-hint",}, "¿Cómo fue operar con "    , _optionalChain([comprador, 'optionalAccess', _8 => _8.name]) || "este comprador", "?")
+        , React.createElement('div', { className: "wiz-hint",}, "¿Cómo fue operar con "    , _optionalChain([comprador, 'optionalAccess', _11 => _11.name]) || "este comprador", "?")
 
         /* Stars */
         , React.createElement('div', { style: {display:"flex", justifyContent:"center", gap:12, margin:"24px 0"},}
@@ -1870,7 +1938,7 @@ function InsigniasScreen({ onBack, rol }) {
           /* Progress to next */
           , React.createElement('div', { style: {marginTop:16},}
             , React.createElement('div', { style: {display:"flex", justifyContent:"space-between", fontSize:10, color:C.muted, marginBottom:6},}
-              , React.createElement('span', null, "Progreso hacia "  , _optionalChain([insignias, 'access', _9 => _9[nivelActual+1], 'optionalAccess', _10 => _10.nombre]))
+              , React.createElement('span', null, "Progreso hacia "  , _optionalChain([insignias, 'access', _12 => _12[nivelActual+1], 'optionalAccess', _13 => _13.nombre]))
               , React.createElement('span', { style: {color:C.brand},}, "3 / 20 ventas"   )
             )
             , React.createElement('div', { style: {height:6, background:C.card2, borderRadius:3, overflow:"hidden"},}
@@ -2409,11 +2477,11 @@ function ChatListScreen({ onBack, onChat, rol }) {
 
 function ChatConversacionScreen({ chat, onBack }) {
   const [texto, setTexto]       = useState("");
-  const [mensajes, setMensajes] = useState(MENSAJES_MOCK[_optionalChain([chat, 'optionalAccess', _11 => _11.id])] || []);
+  const [mensajes, setMensajes] = useState(MENSAJES_MOCK[_optionalChain([chat, 'optionalAccess', _14 => _14.id])] || []);
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    _optionalChain([bottomRef, 'access', _12 => _12.current, 'optionalAccess', _13 => _13.scrollIntoView, 'call', _14 => _14({behavior:"smooth"})]);
+    _optionalChain([bottomRef, 'access', _15 => _15.current, 'optionalAccess', _16 => _16.scrollIntoView, 'call', _17 => _17({behavior:"smooth"})]);
   }, [mensajes]);
 
   const enviar = () => {
@@ -2421,7 +2489,7 @@ function ChatConversacionScreen({ chat, onBack }) {
     const nuevo = { id: mensajes.length+1, de:"yo", texto: texto.trim(), hora:"Ahora" };
     setMensajes(prev => [...prev, nuevo]);
     setTexto("");
-    setTimeout(()=> _optionalChain([bottomRef, 'access', _15 => _15.current, 'optionalAccess', _16 => _16.scrollIntoView, 'call', _17 => _17({behavior:"smooth"})]), 50);
+    setTimeout(()=> _optionalChain([bottomRef, 'access', _18 => _18.current, 'optionalAccess', _19 => _19.scrollIntoView, 'call', _20 => _20({behavior:"smooth"})]), 50);
   };
 
   const c = chat || CHATS_MOCK[0];
@@ -2516,6 +2584,149 @@ function ChatConversacionScreen({ chat, onBack }) {
   );
 }
 
+
+// ── PUBLICAR MATERIAL ─────────────────────────────────────────
+function PublicarMaterialScreen({ onBack, onPublicado }) {
+  const [metalSel, setMetalSel] = useState(null);
+  const [kg, setKg]             = useState("");
+  const [disp, setDisp]         = useState("hoy");
+  const [nota, setNota]         = useState("");
+  const [publicado, setPublicado] = useState(false);
+
+  if (publicado) return (
+    React.createElement('div', { className: "fade", style: {display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"80vh",padding:"0 32px",textAlign:"center"},}
+      , React.createElement('div', { style: {fontSize:64,marginBottom:20},}, "✅")
+      , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:11,color:C.brand,letterSpacing:2,marginBottom:8},}, "PUBLICADO")
+      , React.createElement('div', { style: {fontSize:22,fontWeight:800,color:C.text,marginBottom:12,lineHeight:1.3},}, "Tu material está visible para los compradores"      )
+      , React.createElement('div', { style: {fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:32},}, "Los compradores de tu zona van a recibir una alerta. Tu publicación caduca en "
+                      , React.createElement('strong', { style: {color:C.text},}, "48 horas" ), " o podés marcarla como vendida desde tu perfil."
+      )
+      , React.createElement('button', { onClick: onPublicado, style: {background:C.brand,color:C.dark,border:"none",borderRadius:14,padding:"14px 32px",fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",width:"100%"},}, "Volver al perfil"
+
+      )
+    )
+  );
+
+  const puedePublicar = metalSel && kg && parseInt(kg) > 0;
+
+  return (
+    React.createElement('div', { className: "fade", style: {paddingBottom:100},}
+      , React.createElement('div', { className: "back", onClick: onBack,}, React.createElement(Icon.ArrowLeft, null), React.createElement('span', { className: "back-label",}, "Volver"))
+      , React.createElement('div', { style: {padding:"0 20px"},}
+        , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.brand,letterSpacing:2,marginBottom:4},}, "NUEVO ANUNCIO" )
+        , React.createElement('div', { className: "wiz-q", style: {marginBottom:4},}, "Publicar material" )
+        , React.createElement('div', { className: "wiz-hint", style: {marginBottom:24},}, "Tu anuncio llega a compradores verificados en tu zona."        )
+
+        /* Selector de metal */
+        , React.createElement('div', { style: {marginBottom:20},}
+          , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.muted,letterSpacing:2,marginBottom:10},}, "¿QUÉ METAL TENÉS?"  )
+          , React.createElement('div', { style: {display:"flex",flexWrap:"wrap",gap:8},}
+            , METALS.map(m => (
+              React.createElement('div', { key: m.id, onClick: ()=>setMetalSel(m),
+                style: {
+                  display:"flex",alignItems:"center",gap:8,
+                  background: _optionalChain([metalSel, 'optionalAccess', _21 => _21.id])===m.id ? `${m.color}15` : C.card,
+                  border: `1.5px solid ${_optionalChain([metalSel, 'optionalAccess', _22 => _22.id])===m.id ? m.color : C.border}`,
+                  borderRadius:10, padding:"8px 12px", cursor:"pointer",
+                  transition:"all 0.15s"
+                },}
+                , React.createElement('div', { style: {width:24,height:24,borderRadius:"50%",border:`1.5px solid ${m.color}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+                  , React.createElement('span', { style: {fontFamily:"DM Mono,monospace",fontSize:8,fontWeight:700,color:m.color},}, m.symbol)
+                )
+                , React.createElement('span', { style: {fontSize:12,fontWeight:600,color:_optionalChain([metalSel, 'optionalAccess', _23 => _23.id])===m.id?m.color:C.text},}, m.name)
+              )
+            ))
+          )
+        )
+
+        /* Kg */
+        , React.createElement('div', { style: {marginBottom:20},}
+          , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.muted,letterSpacing:2,marginBottom:8},}, "CANTIDAD APROXIMADA" )
+          , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10},}
+            , React.createElement('input', {
+              type: "number", value: kg, onChange: e=>setKg(e.target.value),
+              placeholder: "Ej: 35" ,
+              style: {...S.input, flex:1},}
+            )
+            , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:14,color:C.muted,flexShrink:0},}, "kg")
+          )
+          , React.createElement('div', { style: {fontSize:11,color:C.muted,marginTop:6},}, "No tiene que ser exacto — es una referencia para el comprador."           )
+        )
+
+        /* Disponibilidad */
+        , React.createElement('div', { style: {marginBottom:20},}
+          , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.muted,letterSpacing:2,marginBottom:10},}, "¿CUÁNDO PODÉS ENTREGAR?"  )
+          , React.createElement('div', { style: {display:"flex",gap:8},}
+            , [
+              {id:"hoy",     label:"Hoy"},
+              {id:"semana",  label:"Esta semana"},
+              {id:"acordar", label:"A coordinar"},
+            ].map(d => (
+              React.createElement('button', { key: d.id, onClick: ()=>setDisp(d.id),
+                style: {
+                  flex:1, padding:"10px 0", borderRadius:10, cursor:"pointer",
+                  fontFamily:"DM Sans,sans-serif", fontWeight:600, fontSize:12,
+                  background: disp===d.id ? `rgba(200,162,39,0.12)` : C.card,
+                  border: `1.5px solid ${disp===d.id ? C.brand : C.border}`,
+                  color: disp===d.id ? C.brand : C.muted,
+                  transition:"all 0.15s"
+                },}
+                , d.label
+              )
+            ))
+          )
+        )
+
+        /* Nota opcional */
+        , React.createElement('div', { style: {marginBottom:24},}
+          , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.muted,letterSpacing:2,marginBottom:8},}, "NOTA ADICIONAL "  , React.createElement('span', { style: {color:"#3A3020"},}, "(OPCIONAL)"))
+          , React.createElement('textarea', {
+            value: nota, onChange: e=>setNota(e.target.value),
+            placeholder: "Ej: Material limpio, sin plástico. Puedo llevar hasta GBA."        ,
+            rows: 3,
+            style: {...S.input, resize:"none", lineHeight:1.6},}
+          )
+        )
+
+        /* Preview card */
+        , puedePublicar && (
+          React.createElement('div', { style: {background:C.card,border:`1px solid rgba(200,162,39,0.2)`,borderRadius:14,padding:14,marginBottom:20},}
+            , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.brand,letterSpacing:2,marginBottom:10},}, "ASÍ VAN A VER TU ANUNCIO"     )
+            , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8},}
+              , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6},}
+                , React.createElement('div', { style: {width:8,height:8,borderRadius:"50%",background:C.priceGood},})
+                , React.createElement('span', { style: {fontSize:10,color:C.priceGood,fontFamily:"DM Mono,monospace",fontWeight:700},}, "NUEVO")
+                , React.createElement('span', { style: {fontSize:10,color:C.muted},}, "ahora")
+              )
+              , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:18,fontWeight:600,color:C.text},}, kg, " kg" )
+            )
+            , React.createElement('div', { style: {display:"flex",gap:6,alignItems:"center"},}
+              , React.createElement('div', { style: {width:22,height:22,borderRadius:"50%",border:`1.5px solid ${metalSel.color}`,display:"flex",alignItems:"center",justifyContent:"center"},}
+                , React.createElement('span', { style: {fontFamily:"DM Mono,monospace",fontSize:8,fontWeight:700,color:metalSel.color},}, metalSel.symbol)
+              )
+              , React.createElement('span', { style: {fontSize:12,fontWeight:700,color:metalSel.color},}, metalSel.name)
+              , React.createElement('span', { style: {fontSize:11,color:C.muted},}, "· " , disp==="hoy"?"disponible hoy":disp==="semana"?"esta semana":"a coordinar")
+            )
+            , nota && React.createElement('div', { style: {fontSize:11,color:C.muted,marginTop:8,fontStyle:"italic"},}, nota)
+          )
+        )
+
+        , React.createElement('button', {
+          onClick: ()=>{ if(puedePublicar) setPublicado(true); },
+          style: {
+            width:"100%", padding:16, borderRadius:14, border:"none", cursor: puedePublicar?"pointer":"not-allowed",
+            background: puedePublicar ? C.brand : "#1C1814",
+            color: puedePublicar ? C.dark : "#3A3020",
+            fontFamily:"DM Sans,sans-serif", fontWeight:700, fontSize:15,
+            transition:"all 0.2s"
+          },}
+          , puedePublicar ? "Publicar ahora →" : "Completá los datos para publicar"
+        )
+      )
+    )
+  );
+}
+
 // ── MAIN ──────────────────────────────────────────────────────
 function Fundix() {
   const savedRol = typeof localStorage !== "undefined" ? localStorage.getItem("fundix_rol") : null;
@@ -2537,7 +2748,7 @@ function Fundix() {
   const NAV = [
     { id:"home",    label:"INICIO",   icon:(on)=>React.createElement(Icon.Home, {      size: 20, color: on?C.brand:C.muted,}) },
     { id:"cuanto",  label:"PRECIO",   icon:(on)=>React.createElement(Icon.DollarSign, { size: 20, color: on?C.brand:C.muted,}) },
-    { id:"donde",   label: rol==="comprador" ? "VENDEDORES" : "COMPRADORES", icon:(on)=>React.createElement(Icon.MapPin, { size: 20, color: on?C.brand:C.muted,}) },
+    { id:"donde",   label: rol==="comprador" ? "MATERIAL" : "COMPRADORES", icon:(on)=>React.createElement(Icon.MapPin, { size: 20, color: on?C.brand:C.muted,}) },
     { id:"chat",    label:"MENSAJES", icon:(on)=>(
         React.createElement('svg', { width: 20, height: 20, viewBox: "0 0 24 24"   , fill: "none", stroke: on?C.brand:C.muted, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
           , React.createElement('path', { d: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"                  ,})
@@ -2578,15 +2789,16 @@ function Fundix() {
                             onB2B: ()=>setView(gated("b2b")),
                             onPlanes: ()=>setView("planes"), onSumate: ()=>setView("sumate"),
                             onLogin: ()=>setView("login"),
+                            onPublicar: ()=>setView("publicar"),
                             onCambiarRol: ()=>{ try{localStorage.removeItem("fundix_rol");}catch(e){} setRol("vendedor"); setView("onboarding"); },});
 
       case "pick-metal": return React.createElement(PickMetal, { onBack: goHome, onNext: m=>{setSelMetal(m);setView("enter-kg");},});
       case "enter-kg":   return React.createElement(EnterKg, { metal: selMetal, onBack: ()=>setView("pick-metal"), onResult: kg=>{setSelKg(kg);setView("result");},});
-      case "result":     return React.createElement(Result, { metal: selMetal, kg: selKg, onDonde: ()=>setView("donde"), onBack: ()=>setView("enter-kg"),});
+      case "result":     return React.createElement(Result, { metal: selMetal, kg: selKg, onDonde: ()=>setView("donde"), onBack: ()=>setView("enter-kg"), onPublicar: ()=>setView("publicar"),});
       case "donde":      return React.createElement(DondeVender, { metal: selMetal, onBack: ()=>setView(selMetal?"result":"home"), compradores: compradores, vendedores: vendedores, rol: rol, onVerPerfil: (c)=>{ setSelComprador(c); setView("perfil-comprador"); }, onVerPerfilVendedor: (v)=>{ setView("perfil-vendedor"); },});
       case "ia":         return React.createElement(IAScreen, { onBack: goHome,});
 
-      case "historial":  return React.createElement(HistorialScreen, { onBack: goHome,});
+      case "historial":  return React.createElement(HistorialScreen, { onBack: goHome, rol: rol,});
       case "chat":       return React.createElement(ChatListScreen, { rol: rol, onBack: goHome, onChat: (c)=>{ setSelChat(c); setView("chat-conv"); },});
       case "chat-conv":  return React.createElement(ChatConversacionScreen, { chat: selChat, onBack: ()=>setView("chat"),});
       case "alertas":    return React.createElement(AlertasScreen, { onBack: goHome,});
@@ -2599,7 +2811,8 @@ function Fundix() {
       case "panel":      return React.createElement(PanelCompradorScreen, { onBack: ()=>setView(user?"profile":"home"), onInsignias: ()=>setView("insignias"),});
       case "planes":     return React.createElement(PlanesCompradorScreen, { onBack: ()=>setView(user?"profile":"home"),});
       case "sumate":     return React.createElement(SumateScreen, { onBack: ()=>setView("home"), onDone: (datos)=>{ setUser({name: datos.nombre || "Comprador",verified:true}); setCompradores(prev=>[...prev,{id:prev.length+1,name:datos.nombre||"Tu negocio",dist:"0 m",rating:0,reviews:0,open:true,phone:datos.whatsapp||"",domicilio:datos.retiro||false,nivel:"normal",address:datos.direccion||""}]); setView("profile"); },});
-      case "profile":    return React.createElement(ProfileScreen, { user: user, rol: rol, onBack: goHome, onPlanes: ()=>setView("planes"), onPanel: ()=>setView("panel"), onInsignias: ()=>setView("insignias"), onSumate: ()=>setView("sumate"), onLogout: ()=>{ setUser(null); goHome(); }, onCambiarRol: ()=>{ try{localStorage.removeItem("fundix_rol");}catch(e){} setRol("vendedor"); setView("onboarding"); },});
+      case "profile":    return React.createElement(ProfileScreen, { user: user, rol: rol, onBack: goHome, onPlanes: ()=>setView("planes"), onPanel: ()=>setView("panel"), onInsignias: ()=>setView("insignias"), onSumate: ()=>setView("sumate"), onPublicar: ()=>setView("publicar"), onLogout: ()=>{ setUser(null); goHome(); }, onCambiarRol: ()=>{ try{localStorage.removeItem("fundix_rol");}catch(e){} setRol("vendedor"); setView("onboarding"); },});
+      case "publicar":   return React.createElement(PublicarMaterialScreen, { onBack: ()=>setView("profile"), onPublicado: ()=>setView("profile"),});
 
       default: return null;
     }
