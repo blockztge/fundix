@@ -1,0 +1,2676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#09080A"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Fundix"/>
+  <title>Fundix</title>
+  <link rel="manifest" href="manifest.json"/>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body { height:100%; background:#09080A; overflow:hidden; }
+    #root { height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script>
+    // Lucide shim — íconos inline SVG
+    const ICONS = {
+      "arrow-left":     [[0,0,24,24],[["polyline",{"points":"15 18 9 12 15 6"}]]],
+      "chevron-right":  [[0,0,24,24],[["polyline",{"points":"9 18 15 12 9 6"}]]],
+      "map-pin":        [[0,0,24,24],[["path",{"d":"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"}],["circle",{"cx":"12","cy":"10","r":"3"}]]],
+      "camera":         [[0,0,24,24],[["path",{"d":"M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"}],["circle",{"cx":"12","cy":"13","r":"4"}]]],
+      "dollar-sign":    [[0,0,24,24],[["line",{"x1":"12","y1":"1","x2":"12","y2":"23"}],["path",{"d":"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"}]]],
+      "home":           [[0,0,24,24],[["path",{"d":"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"}],["polyline",{"points":"9 22 9 12 15 12 15 22"}]]],
+      "star":           [[0,0,24,24],[["polygon",{"points":"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"}]]],
+      "truck":          [[0,0,24,24],[["rect",{"x":"1","y":"3","width":"15","height":"13"}],["polygon",{"points":"16 8 20 8 23 11 23 16 16 16 16 8"}],["circle",{"cx":"5.5","cy":"18.5","r":"2.5"}],["circle",{"cx":"18.5","cy":"18.5","r":"2.5"}]]],
+      "phone":          [[0,0,24,24],[["path",{"d":"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.06 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"}]]],
+      "message-circle": [[0,0,24,24],[["path",{"d":"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"}]]],
+      "check":          [[0,0,24,24],[["polyline",{"points":"20 6 9 17 4 12"}]]],
+      "scan":           [[0,0,24,24],[["path",{"d":"M3 7V5a2 2 0 0 1 2-2h2"}],["path",{"d":"M17 3h2a2 2 0 0 1 2 2v2"}],["path",{"d":"M21 17v2a2 2 0 0 1-2 2h-2"}],["path",{"d":"M7 21H5a2 2 0 0 1-2-2v-2"}],["line",{"x1":"7","y1":"12","x2":"17","y2":"12"}]]],
+      "user":           [[0,0,24,24],[["path",{"d":"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"}],["circle",{"cx":"12","cy":"7","r":"4"}]]],
+      "bell":           [[0,0,24,24],[["path",{"d":"M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"}],["path",{"d":"M13.73 21a2 2 0 0 1-3.46 0"}]]],
+      "settings":       [[0,0,24,24],[["circle",{"cx":"12","cy":"12","r":"3"}],["path",{"d":"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"}]]],
+      "log-out":        [[0,0,24,24],[["path",{"d":"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"}],["polyline",{"points":"16 17 21 12 16 7"}],["line",{"x1":"21","y1":"12","x2":"9","y2":"12"}]]],
+      "shield":         [[0,0,24,24],[["path",{"d":"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"}]]],
+    };
+    window.makeIcon = (name) => ({ size=20, color="currentColor" } = {}) => {
+      const def = ICONS[name];
+      if (!def) return null;
+      const [vb, children] = def;
+      return React.createElement("svg", {
+        width:size, height:size, viewBox:"0 0 24 24",
+        fill:"none", stroke:color, strokeWidth:"1.8",
+        strokeLinecap:"round", strokeLinejoin:"round"
+      }, ...children.map(([tag, attrs]) => React.createElement(tag, attrs)));
+    };
+  </script>
+  <script type="text/babel" data-presets="react">
+    const { useState, useRef, useEffect } = React;
+
+    const Icon = {
+      ArrowLeft:     (p) => window.makeIcon("arrow-left")(p),
+      ChevronRight:  (p) => window.makeIcon("chevron-right")(p),
+      MapPin:        (p) => window.makeIcon("map-pin")(p),
+      Camera:        (p) => window.makeIcon("camera")(p),
+      DollarSign:    (p) => window.makeIcon("dollar-sign")(p),
+      Home:          (p) => window.makeIcon("home")(p),
+      Star:          (p) => window.makeIcon("star")(p),
+      Truck:         (p) => window.makeIcon("truck")(p),
+      Phone:         (p) => window.makeIcon("phone")(p),
+      MessageCircle: (p) => window.makeIcon("message-circle")(p),
+      Check:         (p) => window.makeIcon("check")(p),
+      Scan:          (p) => window.makeIcon("scan")(p),
+      User:          (p) => window.makeIcon("user")(p),
+      Bell:          (p) => window.makeIcon("bell")(p),
+      Settings:      (p) => window.makeIcon("settings")(p),
+      LogOut:        (p) => window.makeIcon("log-out")(p),
+      Shield:        (p) => window.makeIcon("shield")(p),
+    };
+
+
+
+// ── COLORES ──────────────────────────────────────────────────
+const C = {
+  priceGood: "#00C896",       // verde — precio normal o alto
+  priceBad:  "#E03050",       // rojo — precio bajo
+  brand:     "#C8A227",       // dorado profundo
+  brandDark: "#8A6C10",       // dorado oscuro
+  brandGlow: "rgba(200,162,39,0.08)",
+  dark:      "#09080A",       // negro con toque cálido
+  card:      "#100F0D",
+  card2:     "#181510",
+  border:    "#242010",
+  text:      "#F5F0DC",       // crema dorada
+  muted:     "#7A7248",
+  gold:      "#E8C040",
+  red:       "#E03050",
+  blue:      "#3A8FD8",
+  white:     "#FFFFFF",
+};
+
+// Helper: color del precio según nivel
+const priceColor = (nivel) =>
+  nivel === "bajo" ? C.priceBad : C.priceGood;
+
+// ── ÍCONOS SVG LINEALES ──────────────────────────────────────
+const Icon = {
+  // Metales — representados por su símbolo químico en un círculo
+  Metal: ({ symbol, color, size = 40 }) => (
+    <svg width={size} height={size} viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="18" fill="none" stroke={color} strokeWidth="1.5" />
+      <text x="20" y="25" textAnchor="middle" fill={color}
+        style={{ fontSize: symbol.length > 2 ? 9 : 11, fontWeight: 700, fontFamily: "monospace" }}>
+        {symbol}
+      </text>
+    </svg>
+  ),
+  MapPin: ({ size = 18, color = C.muted }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+    </svg>
+  ),
+  Camera: ({ size = 18, color = C.muted }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+    </svg>
+  ),
+  DollarSign: ({ size = 18, color = C.muted }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  ),
+  Home: ({ size = 20, color = C.muted }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  ),
+  Phone: ({ size = 16, color = C.text }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.54 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.29 6.29l1.29-1.29a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  ),
+  MessageCircle: ({ size = 16, color = C.dark }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
+  ChevronRight: ({ size = 18, color = C.dark }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  ),
+  Check: ({ size = 14, color = C.dark }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  ),
+  ArrowLeft: ({ size = 18, color = C.muted }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    </svg>
+  ),
+  TrendingUp: ({ size = 14, color = C.brand }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+    </svg>
+  ),
+  TrendingDown: ({ size = 14, color = C.red }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
+    </svg>
+  ),
+  Bell: ({ size = 20, color = C.muted }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  ),
+  Scan: ({ size = 48, color = C.brand }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+      <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+    </svg>
+  ),
+  Star: ({ size = 13, color = C.gold }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth="1">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  ),
+  Truck: ({ size = 13, color = C.blue }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+      <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+  ),
+  Shield: ({ size = 13, color = C.brand }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  ),
+};
+
+// ── DATOS ─────────────────────────────────────────────────────
+const METALS = [
+  { id:"cobre",    name:"Cobre",    symbol:"Cu", kg:8750,  change:+4.2, color:"#B87333", hint:"Rojizo-naranja. Cables, cañerías, motores." },
+  { id:"aluminio", name:"Aluminio", symbol:"Al", kg:1950,  change:-1.1, color:"#8A9BA8", hint:"Plateado y liviano. Perfiles, latas, marcos." },
+  { id:"bronce",   name:"Bronce",   symbol:"Sn", kg:5800,  change:+2.8, color:"#C8922A", hint:"Dorado oscuro. Canillas, grifería, campanas." },
+  { id:"acero",    name:"Acero",    symbol:"Fe", kg:1050,  change:0.0,  color:"#7A8A90", hint:"Gris, magnético y pesado. Ollas, herramientas." },
+  { id:"plomo",    name:"Plomo",    symbol:"Pb", kg:2350,  change:+1.5, color:"#6A7A85", hint:"Muy pesado, gris oscuro. Baterías, cañerías viejas." },
+  { id:"zinc",     name:"Zinc",     symbol:"Zn", kg:980,   change:-0.8, color:"#8A9A95", hint:"Gris plateado. Chapas de techo, piezas fundidas." },
+];
+
+const COMPRADORES = [
+  { id:1, name:"Depósito San Martín", dist:"800 m",  rating:4.8, reviews:127, open:true,  phone:"11-4567-8901", domicilio:true,  nivel:"alto",   address:"Av. Mitre 2340, Lanús" },
+  { id:2, name:"Centro de Acopio Sur",dist:"1.2 km", rating:4.2, reviews:89,  open:true,  phone:"11-3456-7890", domicilio:false, nivel:"normal", address:"Sarmiento 890, Lomas" },
+  { id:3, name:"MetalRecicla",        dist:"2.1 km", rating:4.9, reviews:203, open:false, phone:"11-5678-9012", domicilio:true,  nivel:"alto",   address:"Belgrano 1100, Avellaneda" },
+  { id:4, name:"Acopio Norte",        dist:"2.8 km", rating:3.7, reviews:45,  open:true,  phone:"11-6789-0123", domicilio:false, nivel:"bajo",   address:"Rivadavia 450, Banfield" },
+];
+
+const VENDEDORES = [
+  { id:1, name:"María G.",      zona:"Lanús",       dist:"600 m",  rating:4.9, reviews:34, disponible:true,  verificado:true,  metales:["Cu","Al","Fe"],     kg:45,  foto:"🔶" },
+  { id:2, name:"Roberto S.",    zona:"Avellaneda",  dist:"1.4 km", rating:4.5, reviews:18, disponible:true,  verificado:true,  metales:["Cu","Pb"],          kg:28,  foto:"🔷" },
+  { id:3, name:"Diego F.",      zona:"Quilmes",     dist:"2.2 km", rating:4.7, reviews:52, disponible:false, verificado:true,  metales:["Al","Fe","Zn"],     kg:120, foto:"⬜" },
+  { id:4, name:"Laura P.",      zona:"Lomas",       dist:"3.1 km", rating:4.2, reviews:11, disponible:true,  verificado:false, metales:["Cu","Al"],          kg:15,  foto:"🟫" },
+];
+
+const OB_SLIDES_VENDEDOR = [
+  { symbol:"Cu", color:"#B87333", step:"01 / 03", title:"Sabé cuánto vale tu metal antes de vender",   body:"Precio de referencia actualizado diariamente. Nunca más vendas sin saber cuánto vale." },
+  { symbol:"📍", isEmoji:true,    step:"02 / 03", title:"Encontrá el comprador que mejor te paga",     body:"Mapa con precios reales, calificaciones y retiro a domicilio. El comprador va a vos." },
+  { symbol:"Fe", color:"#7A8A90", step:"03 / 03", title:"La cámara identifica el metal por vos",       body:"Fotografiás el material y la app detecta el tipo y te da el precio al instante." },
+];
+const OB_SLIDES_COMPRADOR = [
+  { symbol:"Fe", color:"#7A8A90", step:"01 / 03", title:"Más clientes, más material, más negocio",     body:"Accedé a vendedores verificados cerca tuyo antes que la competencia lo haga." },
+  { symbol:"📍", isEmoji:true,    step:"02 / 03", title:"Tu perfil visible para miles de vendedores",  body:"Aparecer primero en el mapa con horarios, precios y si hacés retiro a domicilio." },
+  { symbol:"Cu", color:"#B87333", step:"03 / 03", title:"Precio LME real, sin intermediarios opacos",  body:"Cotización actualizada diariamente. Negociá con datos reales, no con suposiciones." },
+];
+
+const history = [8200, 8350, 8100, 8600, 8450, 8700, 8750];
+const days    = ["L", "M", "X", "J", "V", "S", "H"];
+
+// ── CSS ───────────────────────────────────────────────────────
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #04080A;
+  font-family: 'DM Sans', sans-serif;
+  color: ${C.text};
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.phone {
+  width: 375px;
+  height: 812px;
+  background: ${C.dark};
+  border-radius: 50px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 0 0 1px rgba(200,162,39,0.08),
+    0 0 0 1.5px rgba(255,255,255,0.03),
+    0 48px 120px rgba(0,0,0,0.9);
+  flex-shrink: 0;
+}
+.phone::before {
+  content: '';
+  position: absolute; top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 108px; height: 28px;
+  background: ${C.dark};
+  border-radius: 0 0 16px 16px;
+  z-index: 999;
+}
+
+.status {
+  padding: 12px 26px 0;
+  display: flex; justify-content: space-between;
+  font-size: 10px; font-weight: 600;
+  color: ${C.muted}; flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+}
+
+.screen { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.screen::-webkit-scrollbar { display: none; }
+
+/* ONBOARDING */
+.ob { flex: 1; display: flex; flex-direction: column; padding: 0 28px 32px; height: 100%; }
+.ob-visual { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.ob-symbol {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 28px; font-weight: 500;
+}
+.ob-line { width: 1px; height: 40px; background: linear-gradient(to bottom, currentColor, transparent); opacity: 0.3; }
+.ob-step { font-family: 'DM Mono', monospace; font-size: 10px; color: ${C.brand}; letter-spacing: 2px; margin-bottom: 10px; }
+.ob-title { font-size: 24px; font-weight: 700; color: ${C.white}; line-height: 1.25; margin-bottom: 12px; }
+.ob-body { font-size: 14px; color: ${C.muted}; line-height: 1.65; margin-bottom: 28px; }
+.ob-dots { display: flex; gap: 6px; margin-bottom: 20px; }
+.ob-dot { height: 2px; border-radius: 1px; background: ${C.border}; transition: all 0.3s; }
+.ob-dot.on { background: ${C.brand}; width: 24px; }
+.ob-dot:not(.on) { width: 6px; }
+.ob-btn {
+  width: 100%; padding: 16px;
+  background: ${C.brand}; color: ${C.dark};
+  border: none; border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700; font-size: 15px;
+  cursor: pointer; transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.ob-btn:hover { background: #C8A227; }
+.ob-skip { background: none; border: none; color: ${C.muted}; font-size: 13px; cursor: pointer; margin-top: 12px; width: 100%; text-align: center; padding: 8px; font-family: 'DM Sans', sans-serif; }
+
+/* HEADER */
+.hdr { padding: 14px 20px 10px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.logo { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 18px; color: ${C.brand}; letter-spacing: 1px; }
+.hdr-right { display: flex; gap: 14px; align-items: center; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: ${C.card2}; border: 1px solid ${C.border}; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+/* BACK BTN */
+.back { display: flex; align-items: center; gap: 6px; padding: 14px 20px 6px; cursor: pointer; }
+.back-label { font-size: 13px; color: ${C.muted}; }
+
+/* PROGRESS */
+.progress-wrap { padding: 0 20px 16px; }
+.progress-bg { height: 2px; background: ${C.border}; border-radius: 1px; overflow: hidden; }
+.progress-fill { height: 100%; background: ${C.brand}; border-radius: 1px; transition: width 0.4s ease; }
+
+/* HOME */
+.home { padding: 8px 20px 100px; display: flex; flex-direction: column; gap: 12px; }
+.home-label { font-family: 'DM Mono', monospace; font-size: 10px; color: ${C.muted}; letter-spacing: 2px; margin-bottom: 2px; }
+.home-title { font-size: 22px; font-weight: 700; color: ${C.white}; line-height: 1.2; margin-bottom: 16px; }
+
+.big-card {
+  background: linear-gradient(145deg, ${C.brandDark}, #8A6C10);
+  border-radius: 20px; padding: 22px;
+  cursor: pointer; transition: all 0.2s;
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(200,162,39,0.2);
+}
+.big-card:hover { transform: translateY(-1px); box-shadow: 0 12px 40px rgba(200,162,39,0.15); }
+.bc-label { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 8px; }
+.bc-title { font-size: 20px; font-weight: 700; color: white; line-height: 1.2; margin-bottom: 6px; }
+.bc-sub { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; margin-bottom: 16px; }
+.bc-arrow { width: 32px; height: 32px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; }
+
+.two-col { display: flex; gap: 10px; }
+.sm-card { flex: 1; background: ${C.card}; border: 1px solid ${C.border}; border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s; }
+.sm-card:hover { border-color: rgba(0,200,150,0.3); }
+.sm-icon { margin-bottom: 10px; }
+.sm-label { font-size: 12px; font-weight: 600; color: ${C.text}; line-height: 1.4; }
+
+/* PRICE STRIP */
+.strip { background: ${C.card}; border: 1px solid ${C.border}; border-radius: 16px; padding: 14px 16px; }
+.strip-title { font-family: 'DM Mono', monospace; font-size: 9px; color: ${C.muted}; letter-spacing: 2px; margin-bottom: 12px; }
+.strip-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.strip-row::-webkit-scrollbar { display: none; }
+.strip-chip { flex-shrink: 0; background: ${C.card2}; border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; border: 1px solid ${C.border}; }
+.strip-sym { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; }
+.strip-name { font-size: 10px; color: ${C.muted}; }
+.strip-val { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: ${C.priceGood}; }
+
+/* PICK METAL */
+.pick { padding: 0 20px 100px; }
+.wiz-q { font-size: 22px; font-weight: 700; color: ${C.white}; margin-bottom: 6px; }
+.wiz-hint { font-size: 13px; color: ${C.muted}; margin-bottom: 20px; line-height: 1.5; }
+
+.metal-row {
+  display: flex; align-items: center; gap: 14px;
+  background: ${C.card}; border: 1px solid ${C.border};
+  border-radius: 14px; padding: 14px 16px;
+  margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+}
+.metal-row:hover { border-color: rgba(200,162,39,0.3); }
+.metal-row.on { border-color: ${C.brand}; background: rgba(200,162,39,0.05); }
+.metal-row.on .mr-check { background: ${C.brand}; border-color: ${C.brand}; }
+.mr-sym { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.mr-info { flex: 1; }
+.mr-name { font-size: 15px; font-weight: 600; color: ${C.white}; margin-bottom: 2px; }
+.mr-hint { font-size: 11px; color: ${C.muted}; line-height: 1.4; }
+.mr-price { font-family: 'DM Mono', monospace; font-size: 12px; color: ${C.priceGood}; text-align: right; margin-right: 10px; }
+.mr-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid ${C.border}; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+
+/* KG */
+.kg-screen { padding: 0 20px 100px; }
+.kg-big { display: flex; align-items: baseline; gap: 6px; margin: 20px 0 6px; }
+.kg-input { font-family: 'DM Mono', monospace; font-size: 60px; font-weight: 500; color: ${C.brand}; background: none; border: none; outline: none; width: 150px; -moz-appearance: textfield; }
+.kg-input::-webkit-outer-spin-button, .kg-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.kg-unit { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 400; color: ${C.muted}; }
+.kg-cursor { display: inline-block; width: 2px; height: 52px; background: ${C.brand}; margin-left: 2px; animation: blink 1s infinite; vertical-align: bottom; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+.kg-sub { font-size: 12px; color: ${C.muted}; margin-bottom: 16px; }
+.kg-quick { display: flex; gap: 8px; margin-bottom: 24px; }
+.kg-q { flex: 1; padding: 9px; background: ${C.card}; border: 1px solid ${C.border}; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: 13px; color: ${C.text}; cursor: pointer; transition: all 0.2s; text-align: center; }
+.kg-q:hover { border-color: ${C.brand}; color: ${C.brand}; }
+
+/* RESULT */
+.result-screen { padding: 0 20px 100px; }
+.result-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: ${C.muted}; margin-bottom: 14px; letter-spacing: 0.5px; }
+.result-card { background: linear-gradient(145deg, ${C.brandDark}, #8A6C10); border-radius: 20px; padding: 24px; margin-bottom: 12px; border: 1px solid rgba(200,162,39,0.2); }
+.rc-label { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 6px; }
+.rc-amount { font-family: 'DM Mono', monospace; font-size: 48px; font-weight: 500; color: ${C.priceGood}; line-height: 1; margin-bottom: 4px; }
+.rc-per { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 18px; }
+.rc-min { background: rgba(0,0,0,0.25); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.5; }
+.rc-min strong { color: white; }
+.result-note { font-size: 12px; color: ${C.muted}; text-align: center; margin-top: 10px; line-height: 1.5; }
+
+/* DÓNDE */
+.donde-screen { padding: 0 20px 100px; }
+.comp-card { background: ${C.card}; border: 1px solid ${C.border}; border-radius: 16px; padding: 16px; margin-bottom: 10px; transition: all 0.2s; }
+.comp-card:hover { border-color: rgba(0,200,150,0.25); }
+.comp-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.comp-name { font-size: 15px; font-weight: 600; color: ${C.white}; flex: 1; margin-right: 8px; }
+.open-tag { font-family: 'DM Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 6px; font-weight: 500; letter-spacing: 0.5px; }
+.open-tag.si { background: rgba(200,162,39,0.1); color: ${C.brand}; }
+.open-tag.no { background: rgba(224,48,80,0.1); color: ${C.red}; }
+.price-row { background: ${C.card2}; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.price-big { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: ${C.priceGood}; }
+.price-label-sm { font-size: 10px; color: ${C.muted}; margin-top: 2px; }
+.nivel-tag { font-family: 'DM Mono', monospace; font-size: 9px; padding: 4px 8px; border-radius: 6px; font-weight: 500; }
+.nivel-tag.alto { background: rgba(200,162,39,0.1); color: ${C.brand}; }
+.nivel-tag.normal { background: rgba(232,160,32,0.1); color: ${C.gold}; }
+.nivel-tag.bajo { background: rgba(224,48,80,0.1); color: ${C.red}; }
+.comp-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.comp-meta-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: ${C.muted}; }
+.comp-actions { display: flex; gap: 8px; }
+.btn-call { flex: 1; background: ${C.card2}; border: 1px solid ${C.border}; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s; }
+.btn-call:hover { border-color: rgba(0,200,150,0.3); }
+.btn-call span { font-size: 13px; font-weight: 600; color: ${C.text}; }
+.btn-wa { flex: 1; background: ${C.brand}; border: none; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s; }
+.btn-wa:hover { background: #C8A227; }
+.btn-wa span { font-size: 13px; font-weight: 700; color: ${C.dark}; }
+
+/* IA */
+.ia-screen { padding: 0 20px 100px; }
+.upload-area { border: 1px solid ${C.border}; border-radius: 16px; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; margin-bottom: 14px; background: ${C.card}; }
+.upload-area:hover { border-color: rgba(0,200,150,0.4); background: rgba(200,162,39,0.03); }
+.upload-title { font-size: 14px; font-weight: 600; color: ${C.text}; }
+.upload-sub { font-size: 11px; color: ${C.muted}; }
+.ia-result { background: ${C.card}; border: 1px solid ${C.brand}; border-radius: 16px; padding: 18px; margin-bottom: 12px; }
+.ia-result-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.ia-sym { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; }
+.ia-metal-name { font-size: 24px; font-weight: 700; color: ${C.priceGood}; }
+.ia-conf-label { font-size: 11px; color: ${C.muted}; margin-top: 2px; }
+.conf-bar-bg { height: 4px; background: ${C.border}; border-radius: 2px; margin-bottom: 16px; overflow: hidden; }
+.conf-bar-fill { height: 100%; background: ${C.priceGood}; border-radius: 2px; transition: width 1.2s cubic-bezier(.34,1.56,.64,1); }
+.ia-price-box { background: ${C.card2}; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.ia-price-label { font-family: 'DM Mono', monospace; font-size: 9px; color: ${C.muted}; letter-spacing: 2px; margin-bottom: 4px; }
+.ia-price-val { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; color: ${C.priceGood}; }
+.ia-tip { background: rgba(200,162,39,0.04); border: 1px solid rgba(200,162,39,0.12); border-radius: 10px; padding: 12px; font-size: 12px; color: ${C.muted}; line-height: 1.6; }
+.ia-tip strong { color: ${C.brand}; }
+.metal-id-list { background: ${C.card}; border: 1px solid ${C.border}; border-radius: 14px; padding: 14px; }
+.mil-title { font-family: 'DM Mono', monospace; font-size: 9px; color: ${C.muted}; letter-spacing: 2px; margin-bottom: 12px; }
+.mil-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid ${C.border}; }
+.mil-row:last-child { border-bottom: none; }
+.mil-sym { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; width: 32px; height: 32px; border-radius: 50%; border: 1px solid; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.mil-name { font-size: 13px; font-weight: 600; color: ${C.text}; }
+.mil-hint { font-size: 10px; color: ${C.muted}; }
+
+/* BUTTON */
+.btn-primary { width: 100%; background: ${C.brand}; color: ${C.dark}; border: none; border-radius: 14px; padding: 16px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; }
+.btn-primary:hover { background: #C8A227; }
+.btn-ghost { width: 100%; background: ${C.card}; color: ${C.text}; border: 1px solid ${C.border}; border-radius: 14px; padding: 16px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.2s; }
+.btn-ghost:hover { border-color: rgba(0,200,150,0.3); }
+
+/* STICKY BTN */
+.sticky-btn { position: sticky; bottom: 90px; padding: 0 0 0 0; }
+
+/* CHART */
+.chart-wrap { display: flex; align-items: flex-end; gap: 4px; height: 64px; margin-bottom: 6px; }
+.bar { flex: 1; border-radius: 3px 3px 0 0; cursor: pointer; transition: opacity 0.2s; min-width: 0; }
+.bar:hover { opacity: 0.7; }
+.bar-labels { display: flex; gap: 4px; }
+.bar-label { flex: 1; font-family: 'DM Mono', monospace; font-size: 8px; color: ${C.muted}; text-align: center; }
+.bar-label.today { color: ${C.brand}; }
+
+/* SCANNING */
+.scanning-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 0; gap: 14px; }
+.scanning-line { width: 100%; height: 1px; background: ${C.brand}; animation: scan 1.5s ease-in-out infinite; opacity: 0.7; }
+@keyframes scan { 0%,100%{transform:translateY(-30px);opacity:0.3;} 50%{transform:translateY(30px);opacity:1;} }
+.scanning-text { font-family: 'DM Mono', monospace; font-size: 12px; color: ${C.brand}; letter-spacing: 2px; }
+
+/* BOTTOM NAV */
+.bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 72px; background: rgba(8,12,10,0.97); backdrop-filter: blur(20px); border-top: 1px solid ${C.border}; display: flex; align-items: center; justify-content: space-around; padding: 0 8px 12px; z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 6px; border-radius: 10px; transition: all 0.2s; }
+.nav-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.5px; transition: color 0.2s; }
+.nav-item.on .nav-label { color: ${C.brand}; }
+.nav-item:not(.on) .nav-label { color: ${C.muted}; }
+
+.fade { animation: fd 0.28s ease; }
+@keyframes fd { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+`;
+
+// ── ONBOARDING ────────────────────────────────────────────────
+function Onboarding({ onDone }) {
+  const [step, setStep] = useState("role");
+  const [rol,  setRol]  = useState(null);
+  const [idx,  setIdx]  = useState(0);
+
+  const slides  = rol === "comprador" ? OB_SLIDES_COMPRADOR : OB_SLIDES_VENDEDOR;
+  const s       = slides[idx];
+  const isLast  = idx === slides.length - 1;
+
+  if (step === "role") return (
+    <div style={{height:"100%",display:"flex",flexDirection:"column",padding:"0 28px 36px",background:C.dark}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12}}>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:20,fontWeight:500,color:C.brand,letterSpacing:3,marginBottom:12}}>FUNDIX</div>
+        <div style={{fontSize:26,fontWeight:800,color:C.white,textAlign:"center",lineHeight:1.25,marginBottom:8}}>
+          ¿Cómo vas<br/>a usar la app?
+        </div>
+        <div style={{fontSize:13,color:C.muted,textAlign:"center",lineHeight:1.65}}>
+          Personalizamos tu experiencia<br/>según tu perfil.
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {[
+          {id:"vendedor",  emoji:"📦", title:"Quiero vender material",    sub:"Tengo chatarra, cables o metales para vender"},
+          {id:"comprador", emoji:"🏭", title:"Soy comprador / acopiador", sub:"Compro material y quiero más clientes · Gratis ahora"},
+        ].map(r => (
+          <button key={r.id} onClick={()=>{setRol(r.id);setStep("slides");}} style={{
+            background:C.card, border:`1px solid ${C.border}`, borderRadius:16,
+            padding:"16px 18px", display:"flex", alignItems:"center", gap:14,
+            cursor:"pointer", textAlign:"left", width:"100%", fontFamily:"DM Sans,sans-serif",
+          }}>
+            <span style={{fontSize:28,flexShrink:0}}>{r.emoji}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:3}}>{r.title}</div>
+              <div style={{fontSize:11,color:C.muted}}>{r.sub}</div>
+            </div>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        ))}
+        {/* Aviso período fundador */}
+        <div style={{background:"rgba(200,162,39,0.05)",border:"1px solid rgba(200,162,39,0.15)",borderRadius:12,padding:12,marginTop:4}}>
+          <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
+            <span style={{fontSize:16,flexShrink:0}}>⏳</span>
+            <div style={{fontSize:11,color:C.muted,lineHeight:1.65}}>
+              <strong style={{color:C.brand}}>Período de lanzamiento:</strong> los compradores que se registren ahora acceden gratis. Cuando activemos el plan Pro, conservan precio fundador de por vida.
+            </div>
+          </div>
+        </div>
+        <button style={{background:"none",border:"none",color:C.muted,fontSize:12,cursor:"pointer",padding:"10px 0",fontFamily:"DM Sans,sans-serif"}}
+          onClick={()=>onDone("vendedor")}>Omitir por ahora</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="ob fade" style={{height:"100%",display:"flex",flexDirection:"column"}}>
+      <div className="ob-visual">
+        {s.isEmoji
+          ? <div style={{fontSize:64}}>📍</div>
+          : <div className="ob-symbol" style={{color:s.color,borderColor:s.color}}>{s.symbol}</div>}
+        <div className="ob-line" style={{color:s.isEmoji?C.brand:s.color}}/>
+      </div>
+      <div>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:rol==="comprador"?C.blue:C.brand,letterSpacing:2,marginBottom:6}}>
+          {rol==="comprador"?"PARA COMPRADORES":"PARA VENDEDORES"}
+        </div>
+        <div className="ob-step">{s.step}</div>
+        <div className="ob-title">{s.title}</div>
+        <div className="ob-body">{s.body}</div>
+        <div className="ob-dots">
+          {slides.map((_,j)=><div key={j} className={`ob-dot ${j===idx?"on":""}`}/>)}
+        </div>
+        <button className="ob-btn" onClick={()=>isLast?onDone(rol):setIdx(idx+1)}>
+          {isLast?"Empezar":"Siguiente"}
+        </button>
+        {!isLast && <button className="ob-skip" onClick={()=>onDone(rol)}>Omitir</button>}
+      </div>
+    </div>
+  );
+}
+
+// ── HOME ──────────────────────────────────────────────────────
+function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes, onSumate, onLogin, rol, user }) {
+  const esComprador = rol === "comprador";
+
+  return (
+    <div className="home fade">
+      <div>
+        <div className="home-label">FUNDIX</div>
+        <div className="home-title">{esComprador ? "Panel del comprador" : "¿Qué necesitás hacer hoy?"}</div>
+      </div>
+
+      {/* Card principal según rol */}
+      {esComprador ? (
+        <div className="big-card" onClick={onSumate}>
+          <div className="bc-label">PARA COMPRADORES · GRATIS AHORA</div>
+          <div className="bc-title">Registrá tu negocio en el mapa</div>
+          <div className="bc-sub">Miles de vendedores van a encontrarte. Precio fundador de por vida.</div>
+          <div className="bc-arrow"><Icon.ChevronRight /></div>
+        </div>
+      ) : (
+        <div className="big-card" onClick={onCuanto}>
+          <div className="bc-label">ACCIÓN PRINCIPAL</div>
+          <div className="bc-title">¿Cuánto vale lo que tengo?</div>
+          <div className="bc-sub">Calculá el precio justo de tu metal en segundos.</div>
+          <div className="bc-arrow"><Icon.ChevronRight /></div>
+        </div>
+      )}
+
+      {/* Grid de acciones */}
+      <div className="two-col">
+        <div className="sm-card" onClick={onDonde}>
+          <div className="sm-icon"><Icon.MapPin size={22} color={C.brand} /></div>
+          <div className="sm-label">{esComprador ? "Vendedores cercanos" : "¿Dónde lo vendo?"}</div>
+        </div>
+        <div className="sm-card" onClick={onIA}>
+          <div className="sm-icon"><Icon.Camera size={22} color={C.brand} /></div>
+          <div className="sm-label">{esComprador ? "Identificar metal" : "¿Qué metal tengo?"}</div>
+        </div>
+      </div>
+
+      <div className="two-col">
+        {esComprador ? (
+          <div className="sm-card" onClick={onB2B}>
+            <div className="sm-icon">
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <div className="sm-label">Lotes B2B</div>
+          </div>
+        ) : (
+          <div className="sm-card" onClick={onRetiro}>
+            <div className="sm-icon">
+              <Icon.Truck size={22} color={C.brand} />
+            </div>
+            <div className="sm-label">Retiro a domicilio</div>
+          </div>
+        )}
+        <div className="sm-card" onClick={onHistorial}>
+          <div className="sm-icon">
+            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={C.brand} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <div className="sm-label">{esComprador ? "Mis operaciones" : "Mis ventas"}</div>
+        </div>
+      </div>
+
+      {/* Strip precios */}
+      <div className="strip">
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <div className="strip-title" style={{marginBottom:0}}>PRECIOS DE REFERENCIA · HOY</div>
+          <div style={{display:"flex",alignItems:"center",gap:4}}>
+            <div style={{width:5,height:5,borderRadius:"50%",background:C.priceGood,boxShadow:`0 0 4px ${C.priceGood}`}}/>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:7,color:C.priceGood,letterSpacing:0.5}}>ACTUALIZADO HOY 09:00</span>
+          </div>
+        </div>
+        <div className="strip-row">
+          {METALS.map(m => (
+            <div key={m.id} className="strip-chip">
+              <span className="strip-sym" style={{ color: m.color }}>{m.symbol}</span>
+              <div>
+                <div className="strip-name">{m.name}</div>
+                <div className="strip-val">${m.kg.toLocaleString("es-AR")}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border}`}}>
+          <div style={{fontSize:9,color:C.muted,lineHeight:1.5}}>
+            Basado en LME · Dólar blue $1.210 · Mercado informal GBA
+          </div>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:8,color:C.muted}}>lun–vie 9 AM</div>
+        </div>
+      </div>
+
+      {/* Login CTA si no está logueado */}
+      {!user && (
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:14,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={onLogin}>
+          <div style={{width:36,height:36,borderRadius:"50%",background:`rgba(200,162,39,0.1)`,border:`1px solid rgba(200,162,39,0.25)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Icon.Shield size={16} color={C.brand} />
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.text}}>Ingresá para guardar tu historial</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:1}}>Crear cuenta gratis · toma 1 minuto</div>
+          </div>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── PICK METAL ────────────────────────────────────────────────
+function PickMetal({ onBack, onNext }) {
+  const [sel, setSel] = useState(null);
+
+  return (
+    <div className="fade">
+      <div className="back" onClick={onBack}>
+        <Icon.ArrowLeft /><span className="back-label">Volver</span>
+      </div>
+      <div className="progress-wrap"><div className="progress-bg"><div className="progress-fill" style={{ width: "50%" }} /></div></div>
+      <div className="pick">
+        <div className="wiz-q">¿Qué metal tenés?</div>
+        <div className="wiz-hint">Seleccioná el que más se parece a tu material.</div>
+        <div style={{display:"flex",alignItems:"center",gap:6,background:"#141210",border:"1px solid #242010",borderRadius:10,padding:"8px 12px",marginBottom:12}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:"#00C896",flexShrink:0,boxShadow:"0 0 5px #00C896"}}/>
+          <span style={{fontSize:10,color:"#7A7248"}}>Precios actualizados hoy 09:00 hs · Fuente: LME + dólar blue + mercado GBA</span>
+        </div>
+        {METALS.map(m => (
+          <div key={m.id} className={`metal-row ${sel === m.id ? "on" : ""}`} onClick={() => setSel(m.id)}>
+            <div className="mr-sym" style={{ color: m.color, borderColor: m.color + "60" }}>{m.symbol}</div>
+            <div className="mr-info">
+              <div className="mr-name">{m.name}</div>
+              <div className="mr-hint">{m.hint}</div>
+            </div>
+            <div className="mr-price">${m.kg.toLocaleString("es-AR")}/kg</div>
+            <div className="mr-check">{sel === m.id && <Icon.Check />}</div>
+          </div>
+        ))}
+        {sel && (
+          <div className="sticky-btn" style={{ marginTop: 16 }}>
+            <button className="btn-primary" onClick={() => onNext(METALS.find(m => m.id === sel))}>
+              Continuar con {METALS.find(m => m.id === sel)?.name}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── ENTER KG ──────────────────────────────────────────────────
+function EnterKg({ metal, onBack, onResult }) {
+  const [kg, setKg] = useState("");
+  const QUICK = [1, 5, 10, 20];
+
+  return (
+    <div className="fade">
+      <div className="back" onClick={onBack}>
+        <Icon.ArrowLeft /><span className="back-label">Volver</span>
+      </div>
+      <div className="progress-wrap"><div className="progress-bg"><div className="progress-fill" style={{ width: "100%" }} /></div></div>
+      <div className="kg-screen">
+        <div className="wiz-q">¿Cuántos kilos?</div>
+        <div className="wiz-hint">Ingresá el peso aproximado de tu material.</div>
+        <div className="kg-big">
+          <input className="kg-input" type="number" value={kg} onChange={e => setKg(e.target.value)} placeholder="0" autoFocus />
+          <span className="kg-unit">kg</span>
+        </div>
+        <div className="kg-sub">Cantidad aproximada en kilogramos</div>
+        <div className="kg-quick">
+          {QUICK.map(q => (
+            <button key={q} className="kg-q" onClick={() => setKg(String(q))}>{q} kg</button>
+          ))}
+        </div>
+        {parseFloat(kg) > 0 && (
+          <button className="btn-primary" onClick={() => onResult(parseFloat(kg))}>Ver resultado</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── RESULT ────────────────────────────────────────────────────
+function Result({ metal, kg, onDonde, onBack }) {
+  const total = Math.round(metal.kg * kg);
+  const min   = Math.round(metal.kg * kg * 0.85);
+
+  return (
+    <div className="fade">
+      <div className="back" onClick={onBack}>
+        <Icon.ArrowLeft /><span className="back-label">Recalcular</span>
+      </div>
+      <div className="result-screen">
+        <div className="result-meta">{kg} KG · {metal.symbol} {metal.name.toUpperCase()} · HOY</div>
+        <div className="result-card">
+          <div className="rc-label">PRECIO DE REFERENCIA</div>
+          <div className="rc-amount">${total.toLocaleString("es-AR")}</div>
+          <div className="rc-per">${metal.kg.toLocaleString("es-AR")} por kilogramo</div>
+          <div className="rc-min">
+            <strong>Mínimo recomendado: ${min.toLocaleString("es-AR")}</strong>
+            {" "}— no aceptes menos de este valor en tu zona.
+          </div>
+        </div>
+        <button className="btn-primary" style={{ marginBottom: 8 }} onClick={onDonde}>
+          📍 Ver dónde venderlo
+        </button>
+        <div className="result-note">Precios actualizados diariamente según cotización internacional.</div>
+      </div>
+    </div>
+  );
+}
+
+// ── DÓNDE VENDER ──────────────────────────────────────────────
+function DondeVender({ metal, onBack, compradores, vendedores, onVerPerfil, onVerPerfilVendedor, rol }) {
+  const priceFor = (c) => {
+    const base = metal ? metal.kg : 8750;
+    const mult = c.nivel === "alto" ? 0.92 : c.nivel === "normal" ? 0.85 : 0.75;
+    return Math.round(base * mult).toLocaleString("es-AR");
+  };
+
+  const esComprador = rol === "comprador";
+
+  return (
+    <div className="fade">
+      <div className="back" onClick={onBack}>
+        <Icon.ArrowLeft /><span className="back-label">Volver</span>
+      </div>
+      <div className="donde-screen">
+        <div className="wiz-q">{esComprador ? "Vendedores cercanos" : "Compradores cercanos"}</div>
+        <div className="wiz-hint">{esComprador ? "Vendedores con material disponible en tu zona." : metal ? `Precios para ${metal.name} · ordenados por mejor precio.` : "Ordenados por precio y distancia."}</div>
+        <div style={{display:"flex",alignItems:"center",gap:6,background:"#141210",border:"1px solid #242010",borderRadius:10,padding:"8px 12px",marginBottom:8}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:"#00C896",flexShrink:0,boxShadow:"0 0 5px #00C896"}}/>
+          <span style={{fontSize:10,color:"#7A7248"}}>{esComprador ? "Vendedores verificados · Actualizados hoy" : "Precios declarados por cada comprador · Actualizados esta semana"}</span>
+        </div>
+
+        {/* Vista COMPRADOR — ve vendedores */}
+        {esComprador && (
+          <>
+            {vendedores.length === 0 && (
+              <div style={{textAlign:"center",padding:"32px 20px"}}>
+                <div style={{fontSize:40,marginBottom:12}}>📦</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#F5F0DC",marginBottom:6}}>Sin vendedores todavía</div>
+              </div>
+            )}
+            {vendedores.map(v => (
+              <div key={v.id} className="comp-card" onClick={()=>onVerPerfilVendedor&&onVerPerfilVendedor(v)} style={{cursor:"pointer"}}>
+                <div className="comp-top">
+                  <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#C8A227,#8A6C10)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#09080A",flexShrink:0}}>{v.name[0]}</div>
+                    <div>
+                      <div className="comp-name" style={{marginBottom:2}}>{v.name}</div>
+                      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                        {v.verificado && <span style={{fontSize:8,background:"rgba(58,143,216,0.1)",border:"1px solid rgba(58,143,216,0.3)",borderRadius:4,padding:"1px 5px",color:"#3A8FD8",fontFamily:"DM Mono,monospace"}}>✓ VERIFICADO</span>}
+                        <span style={{fontSize:10,color:"#7A7248"}}>📍 {v.zona} · {v.dist}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{background:v.disponible?"rgba(0,200,150,0.1)":"rgba(224,48,80,0.1)",border:`1px solid ${v.disponible?"rgba(0,200,150,0.3)":"rgba(224,48,80,0.3)"}`,borderRadius:6,padding:"3px 8px",fontSize:9,color:v.disponible?"#00C896":"#E03050",fontFamily:"DM Mono,monospace",flexShrink:0}}>
+                    {v.disponible?"DISPONIBLE":"NO DISPONIBLE"}
+                  </div>
+                </div>
+                {/* Material disponible */}
+                <div style={{display:"flex",gap:6,margin:"10px 0",flexWrap:"wrap"}}>
+                  {v.metales.map(m=>{
+                    const metal = METALS.find(x=>x.symbol===m);
+                    return <span key={m} style={{background:"rgba(200,162,39,0.08)",border:"1px solid rgba(200,162,39,0.2)",borderRadius:6,padding:"3px 8px",fontSize:10,fontWeight:700,color:metal?metal.color:"#C8A227",fontFamily:"DM Mono,monospace"}}>{m}</span>;
+                  })}
+                  <span style={{fontSize:10,color:"#7A7248",alignSelf:"center"}}>· {v.kg} kg aprox.</span>
+                </div>
+                <div className="comp-meta">
+                  <div className="comp-meta-item"><Icon.Star />{v.rating} ({v.reviews})</div>
+                </div>
+                <div className="comp-actions">
+                  <button className="btn-call"><Icon.Phone /><span>Llamar</span></button>
+                  <button className="btn-wa"><Icon.MessageCircle /><span>WhatsApp</span></button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* Vista VENDEDOR — ve compradores */}
+        {!esComprador && (
+          <>
+            {compradores.length === 0 && (
+              <div style={{textAlign:"center",padding:"32px 20px"}}>
+                <div style={{fontSize:40,marginBottom:12}}>📍</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#F5F0DC",marginBottom:6}}>Sin compradores todavía</div>
+                <div style={{fontSize:12,color:"#7A7248",lineHeight:1.6}}>Cuando los compradores se registren aparecen acá.</div>
+              </div>
+            )}
+            {compradores.map(c => (
+              <div key={c.id} className="comp-card" onClick={()=>onVerPerfil(c)} style={{cursor:"pointer"}}>
+                <div className="comp-top">
+                  <div className="comp-name">{c.name}</div>
+                  <div className={`open-tag ${c.open ? "si" : "no"}`}>{c.open ? "ABIERTO" : "CERRADO"}</div>
+                </div>
+                <div className="price-row">
+                  <div>
+                    <div className="price-big" style={{ color: priceColor(c.nivel) }}>${priceFor(c)}/kg</div>
+                    <div className="price-label-sm">{metal ? `precio por ${metal.name}` : "precio referencial"}</div>
+                  </div>
+                  <div className={`nivel-tag ${c.nivel}`}>
+                    {c.nivel === "alto" ? "PRECIO ALTO" : c.nivel === "normal" ? "PRECIO NORMAL" : "PRECIO BAJO"}
+                  </div>
+                </div>
+                <div className="comp-meta">
+                  <div className="comp-meta-item"><Icon.MapPin size={12} color={C.muted} />{c.dist}</div>
+                  <div className="comp-meta-item"><Icon.Star />{c.rating} ({c.reviews})</div>
+                  {c.domicilio && <div className="comp-meta-item"><Icon.Truck />Retiro a domicilio</div>}
+                </div>
+                <div className="comp-actions">
+                  <button className="btn-call"><Icon.Phone /><span>Llamar</span></button>
+                  <button className="btn-wa"><Icon.MessageCircle /><span>WhatsApp</span></button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── IA SCREEN ─────────────────────────────────────────────────
+function IAScreen({ onBack }) {
+  const [st, setSt] = useState("idle");
+  const [conf, setConf] = useState(0);
+
+  const scan = () => {
+    setSt("scanning");
+    setTimeout(() => {
+      setSt("result");
+      let c = 0;
+      const iv = setInterval(() => { c += 2; setConf(c); if (c >= 87) clearInterval(iv); }, 18);
+    }, 1800);
+  };
+
+  return (
+    <div className="fade">
+      <div className="back" onClick={onBack}>
+        <Icon.ArrowLeft /><span className="back-label">Volver</span>
+      </div>
+      <div className="ia-screen">
+        <div className="wiz-q">Identificar metal</div>
+        <div className="wiz-hint">Fotografiá el material y la IA analiza el tipo y precio.</div>
+
+        {st === "idle" && (
+          <>
+            <div className="upload-area" onClick={scan}>
+              <Icon.Scan size={44} color={C.brand} />
+              <div className="upload-title">📸 Fotografiar material</div>
+              <div className="upload-sub">o seleccionar de la galería</div>
+            </div>
+            <div className="metal-id-list">
+              <div className="mil-title">METALES IDENTIFICABLES</div>
+              {METALS.map(m => (
+                <div key={m.id} className="mil-row">
+                  <div className="mil-sym" style={{ color: m.color, borderColor: m.color + "50" }}>{m.symbol}</div>
+                  <div>
+                    <div className="mil-name">{m.name}</div>
+                    <div className="mil-hint">{m.hint}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {st === "scanning" && (
+          <div className="scanning-wrap">
+            <Icon.Scan size={52} color={C.brand} />
+            <div className="scanning-line" />
+            <div className="scanning-text">ANALIZANDO MUESTRA...</div>
+          </div>
+        )}
+
+        {st === "result" && (
+          <div className="fade">
+            <div className="ia-result">
+              <div className="ia-result-top">
+                <div className="ia-sym" style={{ color: "#B87333", border: "1.5px solid #B87333", width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>Cu</div>
+                <div>
+                  <div className="ia-metal-name">Cobre</div>
+                  <div className="ia-conf-label">{conf}% de certeza</div>
+                </div>
+              </div>
+              <div className="conf-bar-bg">
+                <div className="conf-bar-fill" style={{ width: `${conf}%` }} />
+              </div>
+              <div className="ia-price-box">
+                <div className="ia-price-label">PRECIO DE REFERENCIA · HOY</div>
+                <div className="ia-price-val">$8.750/kg</div>
+              </div>
+              <div className="ia-tip">
+                <strong>Cómo confirmar: </strong>
+                El cobre es rojizo-naranja y muy maleable. Al frotarlo deja una marca dorada característica.
+              </div>
+            </div>
+            <button className="btn-primary" style={{ marginBottom: 8 }} onClick={() => { setSt("idle"); setConf(0); }}>
+              📸 Analizar otro material
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+// ── AUTH HELPERS ─────────────────────────────────────────────
+const S = {
+  wrap:  { padding:"20px 20px 32px", display:"flex", flexDirection:"column" },
+  logo:  { fontFamily:"DM Mono,monospace", fontWeight:500, fontSize:16, color:"#C8A227", letterSpacing:2, marginBottom:28 },
+  title: { fontSize:24, fontWeight:700, color:"#FFFFFF", marginBottom:6, lineHeight:1.2 },
+  sub:   { fontSize:13, color:"#7A7248", marginBottom:22, lineHeight:1.6 },
+  label: { fontFamily:"DM Mono,monospace", fontSize:9, color:"#7A7248", letterSpacing:2, marginBottom:6 },
+  input: { width:"100%", background:"#1C1814", border:"1px solid #242010", borderRadius:12, padding:"13px 14px", color:"#F5F0DC", fontSize:14, fontFamily:"DM Sans,sans-serif", outline:"none", display:"block" },
+  btnP:  { width:"100%", background:"#C8A227", color:"#09080A", border:"none", borderRadius:14, padding:16, fontFamily:"DM Sans,sans-serif", fontWeight:700, fontSize:15, cursor:"pointer", marginBottom:10 },
+  btnG:  { width:"100%", background:"#141210", color:"#F5F0DC", border:"1px solid #242010", borderRadius:14, padding:16, fontFamily:"DM Sans,sans-serif", fontWeight:600, fontSize:15, cursor:"pointer", marginBottom:0 },
+};
+
+// ── LOGIN ─────────────────────────────────────────────────────
+function LoginScreen({ onLogin, onRegister }) {
+  const [method, setMethod] = useState("phone");
+  const [phone, setPhone]   = useState("");
+  const [email, setEmail]   = useState("");
+  const [pass,  setPass]    = useState("");
+  const [otp,   setOtp]     = useState(false);
+
+  if (otp) return (
+    <div style={S.wrap} className="fade">
+      <div style={S.logo}>FUNDIX</div>
+      <div style={S.title}>Verificá tu número</div>
+      <div style={S.sub}>Enviamos un código de 6 dígitos a {phone}</div>
+      <div style={{display:"flex",gap:8,margin:"24px 0"}}>
+        {[0,1,2,3,4,5].map(i=>(
+          <input key={i} maxLength={1} style={{flex:1,background:"#1C1814",border:"1px solid #242010",borderRadius:10,padding:"14px 0",textAlign:"center",color:"#F5F0DC",fontSize:20,fontFamily:"DM Mono,monospace",fontWeight:600,outline:"none"}}/>
+        ))}
+      </div>
+      <button style={S.btnP} onClick={onLogin}>Verificar y entrar</button>
+      <button style={S.btnG} onClick={()=>setOtp(false)}>← Cambiar número</button>
+    </div>
+  );
+
+  return (
+    <div style={S.wrap} className="fade">
+      <div style={S.logo}>FUNDIX</div>
+      <div style={S.title}>Ingresá a tu cuenta</div>
+      <div style={S.sub}>Comprá, vendé y consultá precios de metales</div>
+
+      <div style={{display:"flex",background:"#1C1814",borderRadius:12,padding:3,gap:3,marginBottom:20}}>
+        {[["phone","📱 Teléfono"],["email","✉️ Email"]].map(([id,lbl])=>(
+          <button key={id} onClick={()=>setMethod(id)} style={{flex:1,padding:"9px 0",border:"none",borderRadius:10,background:method===id?"#09080A":"transparent",color:method===id?"#F5F0DC":"#7A7248",fontFamily:"DM Sans,sans-serif",fontWeight:600,fontSize:12,cursor:"pointer"}}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {method==="phone" ? (
+        <>
+          <div style={S.label}>NÚMERO DE TELÉFONO</div>
+          <div style={{display:"flex",gap:8,marginBottom:16}}>
+            <div style={{...S.input,width:72,flexShrink:0,textAlign:"center",color:"#7A7248"}}>🇦🇷 +54</div>
+            <input style={{...S.input,flex:1}} placeholder="11 xxxx-xxxx" value={phone} onChange={e=>setPhone(e.target.value)}/>
+          </div>
+          <button style={S.btnP} onClick={()=>phone.length>6?setOtp(true):null}>Enviar código SMS</button>
+        </>
+      ):(
+        <>
+          <div style={S.label}>EMAIL</div>
+          <input style={{...S.input,marginBottom:12}} placeholder="tu@email.com" value={email} onChange={e=>setEmail(e.target.value)}/>
+          <div style={S.label}>CONTRASEÑA</div>
+          <input style={{...S.input,marginBottom:16}} type="password" placeholder="••••••••" value={pass} onChange={e=>setPass(e.target.value)}/>
+          <button style={S.btnP} onClick={onLogin}>Ingresar</button>
+        </>
+      )}
+
+      <div style={{display:"flex",alignItems:"center",gap:10,margin:"14px 0"}}>
+        <div style={{flex:1,height:1,background:"#242010"}}/>
+        <span style={{fontSize:10,color:"#7A7248",fontFamily:"DM Mono",letterSpacing:1}}>O CONTINUAR CON</span>
+        <div style={{flex:1,height:1,background:"#242010"}}/>
+      </div>
+
+      <div style={{display:"flex",gap:8,marginBottom:18}}>
+        {[["🌐","Google"],["🍎","Apple"],["📘","Facebook"]].map(([ic,lbl],i)=>(
+          <button key={i} onClick={onLogin} style={{flex:1,background:"#1C1814",border:"1px solid #242010",borderRadius:12,padding:"11px 6px",display:"flex",alignItems:"center",justifyContent:"center",gap:5,cursor:"pointer",fontFamily:"DM Sans,sans-serif",fontSize:11,fontWeight:600,color:"#F5F0DC"}}>
+            <span style={{fontSize:14}}>{ic}</span>{lbl}
+          </button>
+        ))}
+      </div>
+
+      <div style={{textAlign:"center",fontSize:12,color:"#7A7248"}}>
+        ¿No tenés cuenta?{" "}
+        <span style={{color:"#C8A227",cursor:"pointer",fontWeight:700}} onClick={onRegister}>Registrate gratis</span>
+      </div>
+    </div>
+  );
+}
+
+// ── REGISTER ─────────────────────────────────────────────────
+function RegisterScreen({ onBack, onDone }) {
+  const [step, setStep] = useState(1);
+  const STEPS = ["Cuenta","Perfil","ID","Listo"];
+
+  return (
+    <div style={{...S.wrap,paddingBottom:40}} className="fade">
+      {/* Stepper */}
+      <div style={{display:"flex",marginBottom:24}}>
+        {STEPS.map((lbl,i)=>(
+          <div key={i} style={{flex:1,textAlign:"center"}}>
+            <div style={{width:26,height:26,borderRadius:"50%",margin:"0 auto 4px",background:i+1<=step?"#C8A227":"#1C1814",border:`1px solid ${i+1<=step?"#C8A227":"#242010"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:i+1<=step?"#09080A":"#7A7248",fontFamily:"DM Mono,monospace"}}>
+              {i+1<step?"✓":i+1}
+            </div>
+            <div style={{fontSize:8,color:i+1<=step?"#C8A227":"#7A7248",fontFamily:"DM Mono",letterSpacing:0.5}}>{lbl.toUpperCase()}</div>
+          </div>
+        ))}
+      </div>
+
+      {step===1 && <>
+        <div style={S.title}>Creá tu cuenta</div>
+        <div style={S.sub}>Rápido y gratuito.</div>
+        {[["TELÉFONO","+54 11 xxxx-xxxx","tel"],["EMAIL","tu@email.com","email"],["CONTRASEÑA","Mínimo 8 caracteres","password"]].map(([lbl,ph,type])=>(
+          <div key={lbl} style={{marginBottom:12}}>
+            <div style={S.label}>{lbl}</div>
+            <input style={S.input} placeholder={ph} type={type}/>
+          </div>
+        ))}
+        <div style={{background:"rgba(200,162,39,0.05)",border:"1px solid rgba(200,162,39,0.15)",borderRadius:12,padding:12,marginTop:4,marginBottom:16}}>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:8,color:C.brand,letterSpacing:2,marginBottom:4}}>PRECIO FUNDADOR</div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.65}}>
+            Al registrarte ahora como comprador, quedás en la lista de <strong style={{color:C.text}}>primeros 50 fundadores</strong>. Cuando se active el plan Pro, tu precio queda fijo de por vida — nunca te lo subimos.
+          </div>
+        </div>
+        <button style={S.btnP} onClick={()=>setStep(2)}>Continuar →</button>
+        <button style={S.btnG} onClick={onBack}>← Volver al login</button>
+      </>}
+
+      {step===2 && <>
+        <div style={S.title}>Tu perfil legal</div>
+        <div style={S.sub}>Requerido para operar. Tus datos están protegidos por la Ley 25.326.</div>
+        {[["NOMBRE Y APELLIDO","Ej: Juan García"],["DNI / CUIT","Ej: 30.123.456"],["DOMICILIO","Calle, número, ciudad"],["PROVINCIA","Ej: Buenos Aires"]].map(([lbl,ph])=>(
+          <div key={lbl} style={{marginBottom:12}}>
+            <div style={S.label}>{lbl}</div>
+            <input style={S.input} placeholder={ph}/>
+          </div>
+        ))}
+        <div style={{height:16}}/>
+        <button style={S.btnP} onClick={()=>setStep(3)}>Continuar →</button>
+        <button style={S.btnG} onClick={()=>setStep(1)}>← Volver</button>
+      </>}
+
+      {step===3 && <>
+        <div style={S.title}>Verificación de identidad</div>
+        <div style={S.sub}>Necesario para operar. Solo para verificar tu identidad.</div>
+        {[["🪪","FOTO DEL DNI (FRENTE)","Cara frontal clara del DNI"],["🪪","FOTO DEL DNI (DORSO)","Cara posterior del DNI"],["🤳","SELFIE CON DNI","Sostené el DNI junto a tu cara"]].map(([ic,lbl,sub])=>(
+          <div key={lbl} style={{marginBottom:10}}>
+            <div style={S.label}>{lbl}</div>
+            <div style={{background:"#1C1814",border:"1px dashed #242010",borderRadius:12,padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+              <span style={{fontSize:22,flexShrink:0}}>{ic}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,fontWeight:600,color:"#F5F0DC"}}>{sub}</div>
+                <div style={{fontSize:10,color:"#7A7248",marginTop:2}}>JPG o PNG · máx 5MB</div>
+              </div>
+              <div style={{fontSize:11,color:"#C8A227",fontWeight:700}}>+ Cargar</div>
+            </div>
+          </div>
+        ))}
+        <div style={{background:"rgba(200,162,39,0.04)",border:"1px solid rgba(200,162,39,0.12)",borderRadius:10,padding:12,marginBottom:16,marginTop:4,fontSize:11,color:"#7A7248",lineHeight:1.6}}>
+          🔒 <strong style={{color:"#F5F0DC"}}>Tus datos están protegidos.</strong> Fundix cumple con la Ley 25.326 de Protección de Datos Personales.
+        </div>
+        <button style={S.btnP} onClick={()=>setStep(4)}>Enviar verificación →</button>
+        <button style={S.btnG} onClick={()=>setStep(2)}>← Volver</button>
+      </>}
+
+      {step===4 && (
+        <div style={{textAlign:"center",paddingTop:20}} className="fade">
+          <div style={{fontSize:60,marginBottom:16}}>✅</div>
+          <div style={S.title}>¡Cuenta creada!</div>
+          <div style={{...S.sub,marginBottom:24}}>Tu identidad está en verificación. Te avisamos en menos de 24 hs. Ya podés usar Fundix.</div>
+          <button style={S.btnP} onClick={onDone}>Empezar a usar Fundix</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────
+function HistorialScreen({ onBack }) {
+  const ventas = [
+    {fecha:"08/03/2026",metal:"Cobre",   kg:12, precio:8750, comprador:"Depósito San Martín", total:105000},
+    {fecha:"24/02/2026",metal:"Aluminio",kg:30, precio:1950, comprador:"Centro Acopio Sur",    total:58500},
+    {fecha:"10/02/2026",metal:"Bronce",  kg:5,  precio:5800, comprador:"MetalRecicla",         total:29000},
+  ];
+  const totalMes = ventas.reduce((a,v)=>a+v.total,0);
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+        <div className="wiz-q">Mis ventas</div>
+        <div className="wiz-hint">Historial de operaciones realizadas.</div>
+        <div style={{background:"#141210",border:"1px solid #242010",borderRadius:16,padding:16,marginBottom:16}}>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#7A7248",letterSpacing:2,marginBottom:6}}>TOTAL VENDIDO ESTE MES</div>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:36,fontWeight:500,color:"#00C896",marginBottom:4}}>${totalMes.toLocaleString("es-AR")}</div>
+          <div style={{fontSize:12,color:"#7A7248"}}>3 operaciones · 47 kg totales</div>
+        </div>
+        {ventas.map((v,i)=>(
+          <div key={i} style={{background:"#141210",border:"1px solid #242010",borderRadius:14,padding:14,marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div>
+                <div style={{fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:600,color:"#F5F0DC"}}>{v.metal} · {v.kg} kg</div>
+                <div style={{fontSize:11,color:"#7A7248",marginTop:2}}>{v.comprador}</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:600,color:"#00C896"}}>${v.total.toLocaleString("es-AR")}</div>
+                <div style={{fontSize:10,color:"#7A7248",marginTop:2}}>{v.fecha}</div>
+              </div>
+            </div>
+            <div style={{background:"#1C1814",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#7A7248",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>${v.precio.toLocaleString("es-AR")}/kg · precio al momento</span><span style={{color:C.brand,fontSize:10,cursor:"pointer",fontWeight:600}}>Ver perfil →</span></div>
+            {i===0 && <div style={{marginTop:8,background:"rgba(200,162,39,0.06)",border:"1px solid rgba(200,162,39,0.2)",borderRadius:8,padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+              <span style={{fontSize:11,color:C.brand}}>⭐ Dejá una reseña</span>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#C8A227" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── ALERTAS ───────────────────────────────────────────────────
+function AlertasScreen({ onBack }) {
+  const [alertas, setAlertas] = useState([
+    {metal:"Cobre",   symbol:"Cu", color:"#B87333", tipo:"sube", valor:9000, activa:true},
+    {metal:"Aluminio",symbol:"Al", color:"#8A9BA8", tipo:"baja", valor:1800, activa:false},
+  ]);
+  const [nuevo, setNuevo] = useState(false);
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+        <div className="wiz-q">Alertas de precio</div>
+        <div className="wiz-hint">Te avisamos cuando el precio llegue a tu objetivo.</div>
+        {alertas.map((a,i)=>(
+          <div key={i} style={{background:"#141210",border:`1px solid ${a.activa?"#C8A227":"#242010"}`,borderRadius:14,padding:14,marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:36,height:36,borderRadius:"50%",border:`1.5px solid ${a.color}`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"DM Mono,monospace",fontSize:11,color:a.color,flexShrink:0}}>{a.symbol}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#F5F0DC"}}>{a.metal}</div>
+              <div style={{fontSize:11,color:"#7A7248",marginTop:2}}>
+                Avisar si {a.tipo==="sube"?"supera":"baja de"} <span style={{color:"#00C896",fontFamily:"DM Mono,monospace"}}>${a.valor.toLocaleString("es-AR")}/kg</span>
+              </div>
+            </div>
+            <div onClick={()=>setAlertas(prev=>prev.map((x,j)=>j===i?{...x,activa:!x.activa}:x))}
+              style={{width:44,height:24,borderRadius:12,background:a.activa?"#C8A227":"#1C1814",border:`1px solid ${a.activa?"#C8A227":"#242010"}`,position:"relative",cursor:"pointer",transition:"all 0.2s",flexShrink:0}}>
+              <div style={{width:18,height:18,borderRadius:"50%",background:"#09080A",position:"absolute",top:3,left:a.activa?23:3,transition:"left 0.2s"}}/>
+            </div>
+          </div>
+        ))}
+        <button onClick={()=>setNuevo(!nuevo)} style={{width:"100%",background:"#141210",border:"1px dashed #242010",borderRadius:14,padding:14,color:"#C8A227",fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",marginTop:4}}>
+          {nuevo?"✕ Cancelar":"+ Nueva alerta"}
+        </button>
+        {nuevo && (
+          <div style={{background:"#1C1814",border:"1px solid #242010",borderRadius:14,padding:16,marginTop:10}} className="fade">
+            <div style={{fontSize:13,fontWeight:700,color:"#F5F0DC",marginBottom:12}}>Configurar alerta</div>
+            <div style={{fontSize:11,color:"#7A7248",marginBottom:8}}>Seleccioná el metal</div>
+            <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+              {METALS.map(m=>(
+                <div key={m.id} style={{padding:"7px 12px",background:"#141210",border:"1px solid #242010",borderRadius:8,fontFamily:"DM Mono,monospace",fontSize:11,color:m.color,cursor:"pointer"}}>{m.symbol}</div>
+              ))}
+            </div>
+            <div style={S.label}>AVISAR CUANDO SUPERE ($/KG)</div>
+            <input style={{...S.input,marginBottom:14}} placeholder="Ej: 9.000"/>
+            <button onClick={()=>setNuevo(false)} style={S.btnP}>Guardar alerta</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── RETIRO ────────────────────────────────────────────────────
+function RetiroScreen({ onBack }) {
+  const [step, setStep] = useState(1);
+  const slots = ["Mañana 9–12 hs","Mañana 14–17 hs","Miércoles 9–12 hs","Miércoles 14–17 hs","Jueves 9–12 hs"];
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div className="progress-wrap"><div className="progress-bg"><div className="progress-fill" style={{width:step===1?"33%":step===2?"66%":"100%"}}/></div></div>
+      <div style={{padding:"0 20px"}}>
+        <div className="wiz-q">{step===1?"¿Qué vas a vender?":step===2?"¿Cuándo venimos?":"¡Listo!"}</div>
+        {step===1 && <>
+          <div className="wiz-hint">Contanos qué material tenés.</div>
+          <div style={S.label}>DESCRIPCIÓN DEL MATERIAL</div>
+          <textarea style={{...S.input,resize:"none",height:80,marginBottom:12}} placeholder="Ej: cables de cobre pelado y un motor viejo..."/>
+          <div style={S.label}>PESO ESTIMADO (KG)</div>
+          <input style={{...S.input,marginBottom:20}} placeholder="Ej: 15 kg aproximado"/>
+          <button style={S.btnP} onClick={()=>setStep(2)}>Continuar →</button>
+        </>}
+        {step===2 && <>
+          <div className="wiz-hint">El comprador va a tu domicilio.</div>
+          {slots.map((sl,i)=>(
+            <div key={i} onClick={()=>setStep(3)} style={{background:"#141210",border:"1px solid #242010",borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+              <span style={{fontSize:14,fontWeight:600,color:"#F5F0DC"}}>{sl}</span>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#7A7248" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          ))}
+        </>}
+        {step===3 && (
+          <div style={{textAlign:"center",paddingTop:20}} className="fade">
+            <div style={{fontSize:56,marginBottom:16}}>📍</div>
+            <div style={{fontSize:18,fontWeight:700,color:"#F5F0DC",marginBottom:8}}>¡Turno confirmado!</div>
+            <div style={{fontSize:13,color:"#7A7248",lineHeight:1.7,marginBottom:24}}>
+              Depósito San Martín va a pasar a buscarte.<br/>Te contactan 30 min antes por WhatsApp.
+            </div>
+            <div style={{background:"#141210",border:"1px solid #C8A227",borderRadius:14,padding:16,marginBottom:20,textAlign:"left"}}>
+              <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#7A7248",letterSpacing:2,marginBottom:6}}>PRECIO ESTIMADO</div>
+              <div style={{fontFamily:"DM Mono,monospace",fontSize:28,fontWeight:500,color:"#00C896"}}>$131.250</div>
+              <div style={{fontSize:11,color:"#7A7248",marginTop:4}}>Basado en 15 kg de cobre · puede variar al pesar</div>
+            </div>
+            <button style={S.btnP} onClick={onBack}>Volver al inicio</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── B2B ───────────────────────────────────────────────────────
+function B2BScreen({ onBack }) {
+  const [formulario, setFormulario] = useState(false);
+  const [enviado,    setEnviado]    = useState(false);
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+
+        {/* Badge */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(58,143,216,0.1)",border:"1px solid rgba(58,143,216,0.3)",borderRadius:20,padding:"4px 12px",marginBottom:14}}>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#3A8FD8",letterSpacing:2}}>MÓDULO B2B</span>
+        </div>
+
+        {/* Hero "en construcción" */}
+        <div style={{background:"linear-gradient(135deg,#0A0E1A,#080C14)",border:"1px solid rgba(58,143,216,0.2)",borderRadius:20,padding:24,marginBottom:16,textAlign:"center",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,transparent,#3A8FD8,transparent)"}}/>
+          <div style={{fontSize:48,marginBottom:12}}>🏗️</div>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#3A8FD8",letterSpacing:2,marginBottom:8}}>PRÓXIMAMENTE</div>
+          <div style={{fontSize:20,fontWeight:700,color:"#F5F0DC",marginBottom:8,lineHeight:1.3}}>Lotes mayoristas B2B</div>
+          <div style={{fontSize:13,color:"#7A7248",lineHeight:1.7}}>
+            Estamos construyendo el módulo para operaciones de <strong style={{color:"#F5F0DC"}}>500 kg o más</strong> con verificación de compradores, certificados de pureza y sistema de ofertas seguro.
+          </div>
+        </div>
+
+        {/* Qué va a incluir */}
+        <div style={{background:"#141210",border:"1px solid #242010",borderRadius:16,padding:16,marginBottom:14}}>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#7A7248",letterSpacing:2,marginBottom:12}}>QUÉ VA A INCLUIR</div>
+          {[
+            {ic:"🔍", t:"Publicar y explorar lotes de 500 kg+",       sub:"Con foto, análisis de pureza y precio mínimo"},
+            {ic:"🏭", t:"Compradores industriales verificados",        sub:"CUIT validado, habilitación y reputación"},
+            {ic:"💸", t:"Sistema de ofertas y contrapropuestas",       sub:"Todo dentro de la app, sin llamadas"},
+            {ic:"🔒", t:"Pago seguro con escrow",                      sub:"Fundix retiene el pago hasta confirmar entrega"},
+            {ic:"📄", t:"Certificado de análisis de pureza",           sub:"Convenio con laboratorios habilitados"},
+          ].map((f,i)=>(
+            <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:i<4?12:0}}>
+              <span style={{fontSize:18,flexShrink:0,marginTop:1}}>{f.ic}</span>
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:"#F5F0DC",marginBottom:2}}>{f.t}</div>
+                <div style={{fontSize:11,color:"#7A7248"}}>{f.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA — anotarse en lista de espera o publicar interés */}
+        {!formulario && !enviado && (
+          <>
+            <div style={{background:"rgba(58,143,216,0.04)",border:"1px solid rgba(58,143,216,0.15)",borderRadius:14,padding:14,marginBottom:14,fontSize:12,color:"#7A7248",lineHeight:1.7}}>
+              💡 <strong style={{color:"#F5F0DC"}}>Mientras tanto:</strong> si tenés un lote listo para vender, dejanos los datos y te conectamos con un comprador manualmente. Sin costo, sin complicaciones.
+            </div>
+            <button onClick={()=>setFormulario(true)} style={S.btnP}>
+              Tengo un lote para vender →
+            </button>
+            <button onClick={onBack} style={{...S.btnG, marginTop:8}}>
+              Avisame cuando esté listo
+            </button>
+          </>
+        )}
+
+        {/* Formulario manual */}
+        {formulario && !enviado && (
+          <div className="fade">
+            <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#3A8FD8",letterSpacing:2,marginBottom:12}}>TU LOTE</div>
+            {[
+              ["METAL Y CANTIDAD",     "Ej: 1.200 kg de cobre pelado"],
+              ["PESO ESTIMADO (KG)",   "Ej: 1.200"],
+              ["UBICACIÓN",            "Ej: Avellaneda, Buenos Aires"],
+              ["TELÉFONO DE CONTACTO", "Te llamamos para coordinar"],
+            ].map(([lbl,ph])=>(
+              <div key={lbl} style={{marginBottom:12}}>
+                <div style={S.label}>{lbl}</div>
+                <input style={S.input} placeholder={ph}/>
+              </div>
+            ))}
+            <div style={{background:"rgba(200,162,39,0.04)",border:"1px solid rgba(200,162,39,0.12)",borderRadius:10,padding:12,marginBottom:14,fontSize:11,color:"#7A7248",lineHeight:1.6}}>
+              🔒 Un miembro del equipo Fundix va a revisar tu solicitud y contactarte en menos de 24 hs.
+            </div>
+            <button onClick={()=>setEnviado(true)} style={S.btnP}>Enviar solicitud →</button>
+            <button onClick={()=>setFormulario(false)} style={{...S.btnG,marginTop:8}}>Cancelar</button>
+          </div>
+        )}
+
+        {/* Confirmación */}
+        {enviado && (
+          <div style={{textAlign:"center",paddingTop:8}} className="fade">
+            <div style={{fontSize:52,marginBottom:12}}>✅</div>
+            <div style={{fontSize:18,fontWeight:700,color:"#F5F0DC",marginBottom:8}}>¡Solicitud enviada!</div>
+            <div style={{fontSize:13,color:"#7A7248",lineHeight:1.7,marginBottom:24}}>
+              El equipo de Fundix revisó tu lote y te va a contactar en menos de 24 hs para conectarte con un comprador.
+            </div>
+            <button onClick={onBack} style={S.btnP}>Volver al inicio</button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+// ── PLANES PARA COMPRADORES ──────────────────────────────────
+function PlanesCompradorScreen({ onBack }) {
+  const [planSel, setPlanSel] = useState("pro");
+  const PLANES = {
+    free: { nombre:"Free",  precio:"$0",      periodo:"para siempre", color:"#7A7248", features:[
+      {ok:true, t:"Perfil básico en el mapa"},
+      {ok:true, t:"Recibir contacto de vendedores"},
+      {ok:false,t:"Aparecer primero en resultados"},
+      {ok:false,t:"Badge verificado"},
+      {ok:false,t:"Leads de vendedores cercanos"},
+      {ok:false,t:"Estadísticas de tu zona"},
+    ]},
+    pro: { nombre:"Pro",   precio:"$9.900",  periodo:"/mes · fundador", color:"#C8A227", badge:"PRECIO FUNDADOR", features:[
+      {ok:true, t:"Todo lo del plan Free"},
+      {ok:true, t:"Primero en resultados del mapa"},
+      {ok:true, t:"Badge verificado visible"},
+      {ok:true, t:"Leads de vendedores cercanos"},
+      {ok:true, t:"Estadísticas de tu zona"},
+      {ok:true, t:"Soporte prioritario"},
+    ]},
+    b2b: { nombre:"B2B",   precio:"$49.900", periodo:"/mes",         color:"#3A8FD8", features:[
+      {ok:true, t:"Todo lo del plan Pro"},
+      {ok:true, t:"Lotes mayoristas +500 kg"},
+      {ok:true, t:"Conexión directa con industria"},
+      {ok:true, t:"Reportes de mercado semanales"},
+      {ok:true, t:"API de precios por zona"},
+      {ok:true, t:"Factura A disponible"},
+    ]},
+  };
+  const pl = PLANES[planSel];
+  const CheckX = ({ok,color})=>ok
+    ? <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={color||"#00C896"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    : <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#242010" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#C8A227",letterSpacing:2,marginBottom:6}}>PARA COMPRADORES</div>
+        <div className="wiz-q" style={{marginBottom:4}}>Elegí tu plan</div>
+        <div className="wiz-hint">Vendedores siempre gratis. Compradores acceden a más clientes.</div>
+
+        {/* Banner período fundador */}
+        <div style={{background:"linear-gradient(135deg,#1A1200,#100E00)",border:"1px solid rgba(200,162,39,0.3)",borderRadius:14,padding:14,marginBottom:20,position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,transparent,#C8A227,transparent)"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+            <span style={{fontSize:20}}>⏳</span>
+            <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:C.brand,letterSpacing:2}}>PERÍODO DE LANZAMIENTO</div>
+          </div>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>Registrate ahora, precio fundador de por vida</div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.65,marginBottom:10}}>
+            Los primeros <strong style={{color:C.text}}>50 compradores</strong> que se registren quedan con el plan Pro a <strong style={{color:C.brand}}>$9.900/mes para siempre</strong> — la mitad del precio normal. Sin letra chica.
+          </div>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            <div style={{flex:1,height:6,background:"#1C1814",borderRadius:3,overflow:"hidden"}}>
+              <div style={{width:"34%",height:"100%",background:`linear-gradient(90deg,${C.brand},#E8C040)`,borderRadius:3}}/>
+            </div>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:C.brand,whiteSpace:"nowrap"}}>17 / 50 lugares</span>
+          </div>
+        </div>
+
+        <div style={{display:"flex",gap:8,marginBottom:20}}>
+          {Object.entries(PLANES).map(([id,p])=>(
+            <button key={id} onClick={()=>setPlanSel(id)} style={{flex:1,padding:"10px 4px",background:planSel===id?"#1C1814":"transparent",border:`1px solid ${planSel===id?p.color:"#242010"}`,borderRadius:12,cursor:"pointer",position:"relative"}}>
+              {p.badge && <div style={{position:"absolute",top:-8,left:"50%",transform:"translateX(-50%)",background:"#C8A227",color:"#09080A",borderRadius:5,padding:"2px 7px",fontSize:7,fontWeight:800,fontFamily:"DM Mono,monospace",whiteSpace:"nowrap"}}>{p.badge}</div>}
+              <div style={{fontSize:10,fontWeight:700,color:planSel===id?p.color:"#7A7248",marginBottom:2}}>{p.nombre}</div>
+              <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:700,color:planSel===id?"#F5F0DC":"#7A7248"}}>{p.precio}</div>
+            </button>
+          ))}
+        </div>
+
+        <div style={{background:"linear-gradient(135deg,#1A1200,#100E00)",border:`1px solid ${pl.color}40`,borderRadius:18,padding:20,marginBottom:14,position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${pl.color},transparent)`}}/>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#7A7248",letterSpacing:2,marginBottom:6}}>PLAN {pl.nombre.toUpperCase()}</div>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:30,fontWeight:600,color:pl.color,marginBottom:2}}>{pl.precio}</div>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#7A7248",marginBottom:16}}>{pl.periodo}</div>
+          <div style={{display:"flex",flexDirection:"column",gap:9}}>
+            {pl.features.map((f,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:10}}>
+                <CheckX ok={f.ok} color={pl.color}/>
+                <span style={{fontSize:12,color:f.ok?"#F5F0DC":"#7A7248"}}>{f.t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {planSel==="pro" && (
+          <div style={{background:"rgba(0,200,150,0.04)",border:"1px solid rgba(0,200,150,0.15)",borderRadius:14,padding:14,marginBottom:14}} className="fade">
+            <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"#00C896",letterSpacing:2,marginBottom:8}}>RETORNO ESTIMADO</div>
+            <div style={{display:"flex",gap:8}}>
+              {[["1 cliente/semana","$35.000+/mes"],["Costo del plan","$19.900/mes"],["Ganancia est.","$15.100/mes"]].map(([l,v],i)=>(
+                <div key={i} style={{flex:1,background:"#1C1814",borderRadius:8,padding:"8px 6px",textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"#7A7248",lineHeight:1.4,marginBottom:4}}>{l}</div>
+                  <div style={{fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:700,color:i===2?"#00C896":"#F5F0DC"}}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {planSel!=="free"
+          ? <button style={S.btnP}>Activar plan {pl.nombre} →</button>
+          : <button style={S.btnG} onClick={onBack}>Continuar con plan gratuito</button>}
+        <div style={{fontSize:10,color:"#7A7248",textAlign:"center",lineHeight:1.7,marginTop:10}}>
+          Cancelá cuando quieras. Sin permanencia. Precios en ARS con IVA incluido.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PERFIL ────────────────────────────────────────────────────
+function ProfileScreen({ user, rol, onBack, onLogout, onPlanes, onPanel, onInsignias }) {
+  const menuItems = [
+    {icon:"🪪", label:"Mis datos personales",   sub:"Nombre, DNI, domicilio"},
+    {icon:"✅", label:"Estado de verificación",  sub: user?.verified?"Identidad verificada":"Pendiente de revisión"},
+    {icon:"🔔", label:"Notificaciones",           sub:"Alertas de precio y movimientos"},
+    {icon:"🏅", label:"Mis insignias",             sub:"Tu nivel y progreso en Fundix"},
+    {icon:"🔒", label:"Seguridad",                sub:"Contraseña y dispositivos"},
+    {icon:"📄", label:"Términos y privacidad",    sub:"Ley 25.326 — Datos personales"},
+  ];
+  return (
+    <div style={{padding:"0 20px 100px"}} className="fade">
+      <div style={{textAlign:"center",padding:"24px 0 20px"}}>
+        <div style={{width:72,height:72,borderRadius:"50%",background:`linear-gradient(135deg,#C8A227,#8A6C10)`,margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#09080A",fontFamily:"DM Sans,sans-serif"}}>
+          {(user?.name||"U")[0].toUpperCase()}
+        </div>
+        <div style={{fontSize:18,fontWeight:700,color:"#F5F0DC",marginBottom:6}}>{user?.name||"Usuario"}</div>
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#1C1814",border:"1px solid #242010",borderRadius:20,padding:"4px 14px",fontSize:10,color:"#7A7248",fontFamily:"DM Mono,monospace",letterSpacing:1}}>
+          {rol==="comprador"?"🏭 COMPRADOR":"📦 VENDEDOR"}
+        </div>
+      </div>
+
+      <div style={{background:"#141210",border:"1px solid #242010",borderRadius:16,padding:16,marginBottom:8}}>
+        <div style={{fontSize:10,color:"#7A7248",fontFamily:"DM Mono",letterSpacing:1,marginBottom:8}}>TU PLAN</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <div style={{fontSize:15,fontWeight:700,color:"#F5F0DC"}}>{rol==="comprador"?"Plan Free":"Fundix Gratuito"}</div>
+          <div style={{background:"rgba(200,162,39,0.1)",border:"1px solid rgba(200,162,39,0.25)",borderRadius:6,padding:"3px 8px",fontSize:9,color:"#C8A227",fontFamily:"DM Mono",letterSpacing:0.5}}>ACTIVO</div>
+        </div>
+        <div style={{fontSize:12,color:"#7A7248",lineHeight:1.5,marginBottom:12}}>
+          {rol==="comprador"
+            ? <>Perfil básico en el mapa. <strong style={{color:C.brand}}>Sos fundador — tu precio Pro queda fijo cuando se active.</strong></>
+            : "Precios, mapa, scanner IA, alertas y B2B incluidos."}
+        </div>
+        {/* Insignia progress card — ambos roles */}
+        <div onClick={onInsignias} style={{background:C.card, border:`1px solid rgba(200,162,39,0.2)`, borderRadius:14, padding:16, marginBottom:10, cursor:"pointer"}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>TU INSIGNIA</div>
+          <div style={{display:"flex", alignItems:"center", gap:12, marginBottom:12}}>
+            <span style={{fontSize:32}}>🥈</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14, fontWeight:700, color:"#C0C0C0", marginBottom:2}}>Plata</div>
+              <div style={{fontSize:11, color:C.muted}}>{rol==="vendedor" ? "5 ventas completadas" : "10 reseñas positivas"}</div>
+            </div>
+            <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.brand}}>ver todo →</div>
+          </div>
+          {/* Next level progress */}
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:8, color:C.muted, marginBottom:5}}>
+            {rol==="vendedor" ? "PRÓXIMO: ORO · 3 / 20 ventas" : "PRÓXIMO: ORO · 3 / 25 reseñas"}
+          </div>
+          <div style={{height:5, background:C.card2, borderRadius:3, overflow:"hidden"}}>
+            <div style={{width:"15%", height:"100%", background:`linear-gradient(90deg,${C.brand},#E8C040)`, borderRadius:3}}/>
+          </div>
+          {/* All badges mini row */}
+          <div style={{display:"flex", justifyContent:"space-between", marginTop:12}}>
+            {(rol==="vendedor" ? INSIGNIAS_VENDEDOR : INSIGNIAS_COMPRADOR).map((ins,i)=>(
+              <div key={ins.id} style={{textAlign:"center", opacity: i<=1?1:0.25}}>
+                <div style={{fontSize:18, filter: i<=1?"none":"grayscale(1)"}}>{ins.emoji}</div>
+                <div style={{fontSize:7, fontFamily:"DM Mono,monospace", color: i<=1?ins.color:C.muted, marginTop:2}}>{ins.nombre.slice(0,3).toUpperCase()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{display:"flex", gap:8}}>
+          {rol==="comprador" && (
+            <button onClick={onPlanes} style={{flex:1,background:"linear-gradient(135deg,#1E1600,#140E00)",border:"1px solid rgba(200,162,39,0.3)",borderRadius:10,padding:11,fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:12,color:"#C8A227",cursor:"pointer"}}>
+              Ver planes →
+            </button>
+          )}
+          {rol==="comprador" && (
+            <button onClick={onPanel} style={{flex:1,background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:11,fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:12,color:C.text,cursor:"pointer"}}>
+              Mi panel →
+            </button>
+          )}
+        </div>
+      </div>
+
+      {menuItems.map((item,i)=>(
+        <div key={i} style={{background:"#141210",border:"1px solid #242010",borderRadius:14,padding:"14px 16px",display:"flex",alignItems:"center",gap:12,marginBottom:8,cursor:"pointer"}}>
+          <span style={{fontSize:18,flexShrink:0}}>{item.icon}</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:600,color:"#F5F0DC"}}>{item.label}</div>
+            <div style={{fontSize:11,color:"#7A7248",marginTop:2}}>{item.sub}</div>
+          </div>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#7A7248" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      ))}
+      <button onClick={onLogout} style={{width:"100%",background:"transparent",color:"#E03050",border:"1px solid rgba(224,48,80,0.2)",borderRadius:14,padding:14,fontFamily:"DM Sans,sans-serif",fontWeight:600,fontSize:14,cursor:"pointer",marginTop:8}}>
+        Cerrar sesión
+      </button>
+    </div>
+  );
+}
+
+// ── SUMATE COMO COMPRADOR ────────────────────────────────────
+function SumateScreen({ onBack, onDone }) {
+  const [step, setStep]       = useState(1);
+  const [enviado, setEnviado]   = useState(false);
+  const [negocio, setNegocio]   = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [direccion, setDireccion] = useState("");
+
+  const METALES = ["Cobre","Aluminio","Bronce","Acero","Plomo","Zinc","Hierro","Cables","Motores","Radiadores","Baterías"];
+  const [selMetales, setSelMetales] = useState([]);
+  const toggleMetal = (m) => setSelMetales(prev => prev.includes(m) ? prev.filter(x=>x!==m) : [...prev, m]);
+
+  const SERVICIOS = ["Retiro a domicilio","Balanza certificada","Pago en efectivo","Transferencia","Factura A","Operaciones B2B"];
+  const [selServicios, setSelServicios] = useState([]);
+  const toggleServicio = (s) => setSelServicios(prev => prev.includes(s) ? prev.filter(x=>x!==s) : [...prev, s]);
+
+  if (enviado) return (
+    <div className="fade" style={{padding:"40px 20px",textAlign:"center"}}>
+      <div style={{fontSize:56,marginBottom:16}}>🎉</div>
+      <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:C.brand,letterSpacing:2,marginBottom:8}}>BIENVENIDO A FUNDIX</div>
+      <div style={{fontSize:20,fontWeight:700,color:C.text,marginBottom:8}}>¡Estás en el mapa!</div>
+      <div style={{fontSize:13,color:C.muted,lineHeight:1.7,marginBottom:24}}>
+        Tu perfil ya es visible para vendedores de tu zona. Sos parte de los primeros <strong style={{color:C.brand}}>50 compradores fundadores</strong> — tu precio Pro queda fijo de por vida.
+      </div>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:20,textAlign:"left"}}>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:C.muted,letterSpacing:2,marginBottom:8}}>TU BADGE FUNDADOR</div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:40,height:40,borderRadius:"50%",background:`rgba(200,162,39,0.1)`,border:`1px solid rgba(200,162,39,0.3)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏭</div>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:C.text}}>Comprador Fundador</div>
+            <div style={{fontSize:11,color:C.brand,marginTop:2}}>Plan Pro · precio fijo de por vida</div>
+          </div>
+        </div>
+      </div>
+      <button style={S.btnP} onClick={()=>onDone({nombre:negocio,whatsapp,direccion,retiro:selServicios.includes("Retiro a domicilio")})}>Ir a mi perfil →</button>
+    </div>
+  );
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div className="progress-wrap">
+        <div className="progress-bg">
+          <div className="progress-fill" style={{width: step===1?"33%":step===2?"66%":"100%"}}/>
+        </div>
+      </div>
+      <div style={{padding:"0 20px"}}>
+
+        {/* Badge fundador */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(200,162,39,0.08)",border:"1px solid rgba(200,162,39,0.25)",borderRadius:20,padding:"4px 12px",marginBottom:12}}>
+          <span style={{fontSize:10}}>⏳</span>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:8,color:C.brand,letterSpacing:1.5}}>PERÍODO FUNDADOR · 17/50 LUGARES</span>
+        </div>
+
+        {step===1 && <>
+          <div className="wiz-q">Tu negocio</div>
+          <div className="wiz-hint">Estos datos van a aparecer en tu perfil público.</div>
+          {[
+            ["NOMBRE DEL NEGOCIO / DEPÓSITO","Ej: Depósito San Martín", negocio, setNegocio],
+            ["NOMBRE DEL RESPONSABLE","Ej: Juan García", "", null],
+            ["DIRECCIÓN COMPLETA","Calle, número, localidad", direccion, setDireccion],
+            ["WHATSAPP (con código de área)","Ej: 11 4567-8901", whatsapp, setWhatsapp],
+          ].map(([lbl,ph,val,setter])=>(
+            <div key={lbl} style={{marginBottom:12}}>
+              <div style={S.label}>{lbl}</div>
+              <input style={S.input} placeholder={ph} value={val||""} onChange={e=>setter&&setter(e.target.value)}/>
+            </div>
+          ))}
+          <div style={{marginBottom:20}}>
+            <div style={S.label}>HORARIO DE ATENCIÓN</div>
+            <div style={{display:"flex",gap:8}}>
+              <input style={{...S.input,flex:1}} placeholder="Lun–Vie: 8 a 17 hs"/>
+              <input style={{...S.input,flex:1}} placeholder="Sáb: 8 a 13 hs"/>
+            </div>
+          </div>
+          <button style={S.btnP} onClick={()=>setStep(2)}>Continuar →</button>
+        </>}
+
+        {step===2 && <>
+          <div className="wiz-q">¿Qué comprás?</div>
+          <div className="wiz-hint">Seleccioná los metales que aceptás.</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
+            {METALES.map(m=>(
+              <div key={m} onClick={()=>toggleMetal(m)} style={{
+                padding:"8px 14px",borderRadius:10,cursor:"pointer",
+                background: selMetales.includes(m) ? `rgba(200,162,39,0.12)` : C.card2,
+                border: `1px solid ${selMetales.includes(m) ? C.brand : C.border}`,
+                fontSize:12, fontWeight: selMetales.includes(m)?700:400,
+                color: selMetales.includes(m) ? C.brand : C.muted,
+                transition:"all 0.15s",
+              }}>{m}</div>
+            ))}
+          </div>
+
+          <div style={S.label}>SERVICIOS QUE OFRECÉS</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
+            {SERVICIOS.map(s=>(
+              <div key={s} onClick={()=>toggleServicio(s)} style={{
+                padding:"8px 14px",borderRadius:10,cursor:"pointer",
+                background: selServicios.includes(s) ? `rgba(0,200,150,0.08)` : C.card2,
+                border: `1px solid ${selServicios.includes(s) ? C.priceGood : C.border}`,
+                fontSize:12, fontWeight: selServicios.includes(s)?700:400,
+                color: selServicios.includes(s) ? C.priceGood : C.muted,
+                transition:"all 0.15s",
+              }}>{s}</div>
+            ))}
+          </div>
+          <button style={S.btnP} onClick={()=>setStep(3)}>Continuar →</button>
+          <button style={{...S.btnG,marginTop:8}} onClick={()=>setStep(1)}>← Volver</button>
+        </>}
+
+        {step===3 && <>
+          <div className="wiz-q">Precio que pagás</div>
+          <div className="wiz-hint">Aproximado. Podés actualizarlo cuando quieras.</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
+            {(selMetales.length > 0 ? selMetales : ["Cobre","Aluminio","Bronce"]).map(m=>(
+              <div key={m} style={{display:"flex",alignItems:"center",gap:12,background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px"}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.text,width:70}}>{m}</div>
+                <div style={{flex:1,display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontFamily:"DM Mono,monospace",fontSize:13,color:C.muted}}>$</span>
+                  <input style={{...S.input,flex:1,padding:"8px 10px"}} placeholder="0.000"/>
+                  <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:C.muted}}>/kg</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Aviso precio fundador */}
+          <div style={{background:"rgba(200,162,39,0.05)",border:"1px solid rgba(200,162,39,0.2)",borderRadius:12,padding:14,marginBottom:16}}>
+            <div style={{fontFamily:"DM Mono,monospace",fontSize:8,color:C.brand,letterSpacing:2,marginBottom:4}}>PRECIO FUNDADOR</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.65}}>
+              Al confirmar, tu perfil queda activo en el mapa. Cuando lancemos el plan Pro tu precio queda en <strong style={{color:C.brand}}>$9.900/mes de por vida</strong> — nunca te lo subimos.
+            </div>
+          </div>
+
+          <button style={S.btnP} onClick={()=>{ setEnviado(true); }}>Publicar mi perfil →</button>
+          <button style={{...S.btnG,marginTop:8}} onClick={()=>setStep(2)}>← Volver</button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+
+// ── DATOS INSIGNIAS ──────────────────────────────────────────
+const INSIGNIAS_VENDEDOR = [
+  { id:"bronce",   emoji:"🥉", nombre:"Bronce",   color:"#CD7F32", req:"Primera venta",          desc:"Bienvenido al mercado." },
+  { id:"plata",    emoji:"🥈", nombre:"Plata",    color:"#C0C0C0", req:"5 ventas completadas",   desc:"Ya sabés cómo funciona." },
+  { id:"oro",      emoji:"🥇", nombre:"Oro",      color:"#C8A227", req:"20 ventas · 200 kg",     desc:"Vendedor de peso." },
+  { id:"platino",  emoji:"💠", nombre:"Platino",  color:"#8EAEC0", req:"50 ventas · 500 kg",     desc:"Referente de tu zona." },
+  { id:"diamante", emoji:"💎", nombre:"Diamante", color:"#A0D8EF", req:"100 ventas · 1.000 kg",  desc:"El nivel más alto. Leyenda." },
+];
+const INSIGNIAS_COMPRADOR = [
+  { id:"bronce",   emoji:"🥉", nombre:"Bronce",   color:"#CD7F32", req:"Primer mes activo",           desc:"Empezaste a construir tu reputación." },
+  { id:"plata",    emoji:"🥈", nombre:"Plata",    color:"#C0C0C0", req:"10 reseñas positivas",        desc:"Los vendedores confían en vos." },
+  { id:"oro",      emoji:"🥇", nombre:"Oro",      color:"#C8A227", req:"25 reseñas · 3 meses activo", desc:"Comprador consolidado." },
+  { id:"platino",  emoji:"💠", nombre:"Platino",  color:"#8EAEC0", req:"Top 5 de tu zona",            desc:"Dominás el mercado local." },
+  { id:"diamante", emoji:"💎", nombre:"Diamante", color:"#A0D8EF", req:"Top comprador de la región",  desc:"La industria te conoce." },
+];
+
+// ── RESEÑAS ───────────────────────────────────────────────────
+function ReseñaScreen({ comprador, onBack, onDone }) {
+  const [stars,    setStars]    = useState(0);
+  const [hover,    setHover]    = useState(0);
+  const [comment,  setComment]  = useState("");
+  const [enviado,  setEnviado]  = useState(false);
+
+  if (enviado) return (
+    <div style={{padding:"40px 20px", textAlign:"center"}} className="fade">
+      <div style={{fontSize:52, marginBottom:12}}>⭐</div>
+      <div style={{fontSize:18, fontWeight:700, color:C.text, marginBottom:8}}>¡Gracias por tu reseña!</div>
+      <div style={{fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:24}}>
+        Tu opinión ayuda a otros vendedores a elegir mejor.
+      </div>
+      <button style={S.btnP} onClick={onDone}>Volver al inicio</button>
+    </div>
+  );
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+        <div className="wiz-q">Calificá tu experiencia</div>
+        <div className="wiz-hint">¿Cómo fue operar con {comprador?.name || "este comprador"}?</div>
+
+        {/* Stars */}
+        <div style={{display:"flex", justifyContent:"center", gap:12, margin:"24px 0"}}>
+          {[1,2,3,4,5].map(s => (
+            <div key={s}
+              onMouseEnter={()=>setHover(s)}
+              onMouseLeave={()=>setHover(0)}
+              onClick={()=>setStars(s)}
+              style={{fontSize:40, cursor:"pointer", transition:"transform 0.15s",
+                transform: (hover||stars) >= s ? "scale(1.15)" : "scale(1)",
+                filter: (hover||stars) >= s ? "none" : "grayscale(1) opacity(0.3)"}}>
+              ⭐
+            </div>
+          ))}
+        </div>
+        <div style={{textAlign:"center", fontFamily:"DM Mono,monospace", fontSize:11, color:C.brand, marginBottom:20, minHeight:16}}>
+          {stars===1?"Muy malo" : stars===2?"Malo" : stars===3?"Regular" : stars===4?"Bueno" : stars===5?"¡Excelente!" : ""}
+        </div>
+
+        {/* Tags rápidos */}
+        <div style={S.label}>¿QUÉ DESTACÁS?</div>
+        <div style={{display:"flex", flexWrap:"wrap", gap:8, marginBottom:16}}>
+          {["Buen precio","Pesó bien","Pagó rápido","Amable","Fue a buscarme","Transparente"].map(t => (
+            <div key={t} onClick={()=>setComment(c => c.includes(t) ? c.replace(t+". ","") : c+t+". ")}
+              style={{padding:"7px 12px", borderRadius:20, cursor:"pointer", fontSize:11, fontWeight:600,
+                background: comment.includes(t) ? `rgba(200,162,39,0.12)` : C.card2,
+                border: `1px solid ${comment.includes(t) ? C.brand : C.border}`,
+                color: comment.includes(t) ? C.brand : C.muted}}>
+              {t}
+            </div>
+          ))}
+        </div>
+
+        {/* Comment */}
+        <div style={S.label}>COMENTARIO (OPCIONAL)</div>
+        <textarea
+          value={comment}
+          onChange={e=>setComment(e.target.value)}
+          style={{...S.input, resize:"none", height:80, marginBottom:20}}
+          placeholder="Contá tu experiencia..."
+        />
+
+        <button
+          onClick={()=>stars>0 && setEnviado(true)}
+          style={{...S.btnP, opacity: stars>0?1:0.4}}>
+          Publicar reseña →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── INSIGNIAS SCREEN ─────────────────────────────────────────
+function InsigniasScreen({ onBack, rol }) {
+  const insignias = rol === "comprador" ? INSIGNIAS_COMPRADOR : INSIGNIAS_VENDEDOR;
+  // Simulate user at "plata" level
+  const nivelActual = 1; // index
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+        <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.brand, letterSpacing:2, marginBottom:6}}>TUS LOGROS</div>
+        <div className="wiz-q" style={{marginBottom:4}}>Insignias</div>
+        <div className="wiz-hint">Completá operaciones para subir de nivel.</div>
+
+        {/* Nivel actual destacado */}
+        <div style={{
+          background:`linear-gradient(135deg, #1A1200, #100E00)`,
+          border:`1px solid rgba(200,162,39,0.3)`,
+          borderRadius:18, padding:20, marginBottom:20,
+          position:"relative", overflow:"hidden", textAlign:"center"
+        }}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${C.brand},transparent)`}}/>
+          <div style={{fontSize:52, marginBottom:8}}>{insignias[nivelActual].emoji}</div>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:4}}>NIVEL ACTUAL</div>
+          <div style={{fontSize:22, fontWeight:700, color:insignias[nivelActual].color, marginBottom:4}}>{insignias[nivelActual].nombre}</div>
+          <div style={{fontSize:12, color:C.muted}}>{insignias[nivelActual].desc}</div>
+
+          {/* Progress to next */}
+          <div style={{marginTop:16}}>
+            <div style={{display:"flex", justifyContent:"space-between", fontSize:10, color:C.muted, marginBottom:6}}>
+              <span>Progreso hacia {insignias[nivelActual+1]?.nombre}</span>
+              <span style={{color:C.brand}}>3 / 20 ventas</span>
+            </div>
+            <div style={{height:6, background:C.card2, borderRadius:3, overflow:"hidden"}}>
+              <div style={{width:"15%", height:"100%", background:`linear-gradient(90deg,${C.brand},#E8C040)`, borderRadius:3}}/>
+            </div>
+          </div>
+        </div>
+
+        {/* Todas las insignias */}
+        <div style={S.label}>TODAS LAS INSIGNIAS</div>
+        <div style={{display:"flex", flexDirection:"column", gap:10}}>
+          {insignias.map((ins, i) => {
+            const desbloqueada = i <= nivelActual;
+            const esActual     = i === nivelActual;
+            return (
+              <div key={ins.id} style={{
+                background: desbloqueada ? C.card : C.card,
+                border: `1px solid ${esActual ? ins.color+"80" : desbloqueada ? C.border+"80" : C.border+"30"}`,
+                borderRadius:14, padding:"14px 16px",
+                display:"flex", alignItems:"center", gap:14,
+                opacity: desbloqueada ? 1 : 0.4,
+              }}>
+                <div style={{fontSize:32, flexShrink:0, filter: desbloqueada?"none":"grayscale(1)"}}>{ins.emoji}</div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:3}}>
+                    <span style={{fontSize:14, fontWeight:700, color: desbloqueada ? ins.color : C.muted}}>{ins.nombre}</span>
+                    {esActual && <span style={{background:`rgba(200,162,39,0.12)`, border:`1px solid rgba(200,162,39,0.3)`, borderRadius:6, padding:"2px 7px", fontSize:8, color:C.brand, fontFamily:"DM Mono,monospace"}}>ACTUAL</span>}
+                    {desbloqueada && !esActual && <span style={{fontSize:10}}>✓</span>}
+                  </div>
+                  <div style={{fontSize:11, color:C.muted}}>{ins.req}</div>
+                  {desbloqueada && <div style={{fontSize:11, color:C.muted, marginTop:2, fontStyle:"italic"}}>{ins.desc}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PANEL COMPRADOR ───────────────────────────────────────────
+function PanelCompradorScreen({ onBack, onInsignias }) {
+  const [precios, setPrecios] = useState(
+    METALS.map(m => ({...m, precio: m.kg}))
+  );
+  const [abierto,   setAbierto]   = useState(true);
+  const [retiro,    setRetiro]    = useState(true);
+  const [guardado,  setGuardado]  = useState(false);
+
+  const updatePrecio = (id, val) => {
+    setPrecios(prev => prev.map(m => m.id===id ? {...m, precio: Number(val)||0} : m));
+  };
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+        <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.blue, letterSpacing:2, marginBottom:6}}>MI NEGOCIO</div>
+        <div className="wiz-q" style={{marginBottom:4}}>Panel del comprador</div>
+        <div className="wiz-hint">Actualizá tu perfil para que los vendedores te encuentren.</div>
+
+        {/* Insignia actual */}
+        <div onClick={onInsignias} style={{
+          background:C.card, border:`1px solid rgba(200,162,39,0.2)`,
+          borderRadius:14, padding:"12px 16px", marginBottom:14,
+          display:"flex", alignItems:"center", gap:12, cursor:"pointer"
+        }}>
+          <span style={{fontSize:28}}>🥈</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13, fontWeight:700, color:C.text}}>Nivel Plata</div>
+            <div style={{fontSize:11, color:C.muted, marginTop:1}}>3 reseñas · 15 ventas para llegar a Oro</div>
+          </div>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        {/* Estado hoy */}
+        <div style={S.label}>ESTADO HOY</div>
+        <div style={{display:"flex", gap:10, marginBottom:14}}>
+          <div onClick={()=>setAbierto(!abierto)} style={{
+            flex:1, background: abierto?"rgba(0,200,150,0.08)":"rgba(224,48,80,0.08)",
+            border:`1px solid ${abierto?"rgba(0,200,150,0.3)":"rgba(224,48,80,0.3)"}`,
+            borderRadius:12, padding:"12px 0", textAlign:"center", cursor:"pointer"
+          }}>
+            <div style={{fontSize:20, marginBottom:4}}>{abierto?"🟢":"🔴"}</div>
+            <div style={{fontSize:12, fontWeight:700, color: abierto?C.priceGood:C.priceBad}}>{abierto?"ABIERTO":"CERRADO"}</div>
+          </div>
+          <div onClick={()=>setRetiro(!retiro)} style={{
+            flex:1, background: retiro?"rgba(200,162,39,0.08)":"rgba(122,114,72,0.08)",
+            border:`1px solid ${retiro?"rgba(200,162,39,0.3)":C.border}`,
+            borderRadius:12, padding:"12px 0", textAlign:"center", cursor:"pointer"
+          }}>
+            <div style={{fontSize:20, marginBottom:4}}>🚛</div>
+            <div style={{fontSize:12, fontWeight:700, color: retiro?C.brand:C.muted}}>RETIRO {retiro?"SÍ":"NO"}</div>
+          </div>
+        </div>
+
+        {/* Precios por metal */}
+        <div style={S.label}>MIS PRECIOS HOY ($/KG)</div>
+        <div style={{display:"flex", flexDirection:"column", gap:8, marginBottom:16}}>
+          {precios.map(m => (
+            <div key={m.id} style={{display:"flex", alignItems:"center", gap:12, background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"10px 14px"}}>
+              <div style={{width:32, height:32, borderRadius:"50%", border:`1.5px solid ${m.color}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"DM Mono,monospace", fontSize:10, color:m.color, flexShrink:0}}>{m.symbol}</div>
+              <div style={{flex:1, fontSize:12, color:C.text, fontWeight:600}}>{m.name}</div>
+              <div style={{display:"flex", alignItems:"center", gap:4}}>
+                <span style={{fontFamily:"DM Mono,monospace", fontSize:12, color:C.muted}}>$</span>
+                <input
+                  type="number"
+                  value={m.precio}
+                  onChange={e=>updatePrecio(m.id, e.target.value)}
+                  style={{...S.input, width:80, padding:"6px 8px", textAlign:"right", fontFamily:"DM Mono,monospace", fontSize:13, color:C.priceGood}}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {guardado && (
+          <div style={{background:"rgba(0,200,150,0.08)", border:"1px solid rgba(0,200,150,0.25)", borderRadius:10, padding:"10px 14px", marginBottom:12, fontSize:12, color:C.priceGood, textAlign:"center"}} className="fade">
+            ✓ Precios actualizados — ya visibles en el mapa
+          </div>
+        )}
+        <button onClick={()=>setGuardado(true)} style={S.btnP}>Guardar cambios →</button>
+      </div>
+    </div>
+  );
+}
+
+// ── PERFIL PÚBLICO — COMPRADOR ────────────────────────────────
+function PerfilCompradorScreen({ comprador, onBack, onResena, onChat }) {
+  const reseñas = [
+    { autor:"Carlos M.", stars:5, fecha:"08/03/2026", texto:"Muy buen precio, pagó al instante. Volvería sin dudas.", tag:"Buen precio" },
+    { autor:"Ana R.",    stars:4, fecha:"02/03/2026", texto:"Fueron a buscarme y pesó bien. Recomendado.", tag:"Fue a buscarme" },
+    { autor:"Luis G.",   stars:5, fecha:"18/02/2026", texto:"El mejor de la zona, siempre transparente.", tag:"Transparente" },
+  ];
+
+  const defaults = {
+    "Depósito San Martín": {
+      horario:["Lun–Vie 8:00 a 18:00","Sáb 8:00 a 13:00"],
+      minKg: 2,
+      pagos:["Efectivo","Transferencia"],
+      metales:["Cu","Al","Fe","Pb","Zn"],
+      tiempoAtencion:"~15 min",
+    },
+    "Centro de Acopio Sur": {
+      horario:["Lun–Sáb 7:00 a 16:00"],
+      minKg: 5,
+      pagos:["Efectivo"],
+      metales:["Cu","Al","Fe"],
+      tiempoAtencion:"~10 min",
+    },
+    "MetalRecicla": {
+      horario:["Lun–Vie 9:00 a 17:00"],
+      minKg: 1,
+      pagos:["Efectivo","Transferencia"],
+      metales:["Cu","Al","Fe","Pb","Zn","Sn"],
+      tiempoAtencion:"~20 min",
+    },
+    "Acopio Norte": {
+      horario:["Lun–Vie 8:00 a 15:00"],
+      minKg: 10,
+      pagos:["Efectivo"],
+      metales:["Cu","Al"],
+      tiempoAtencion:"~30 min",
+    },
+  };
+
+  const c = comprador || { name:"Depósito San Martín", dist:"800 m", rating:4.8, reviews:127, open:true, domicilio:true, nivel:"alto", address:"Av. Mitre 2340, Lanús", phone:"11-4567-8901" };
+  const extra = defaults[c.name] || defaults["Depósito San Martín"];
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+
+        {/* Header del perfil */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:20, marginBottom:12}}>
+          <div style={{display:"flex", alignItems:"flex-start", gap:14, marginBottom:14}}>
+            <div style={{width:52, height:52, borderRadius:14, background:`linear-gradient(135deg,#1A1200,#100E00)`, border:`1px solid rgba(200,162,39,0.3)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0}}>🏭</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16, fontWeight:700, color:C.text, marginBottom:4}}>{c.name}</div>
+              <div style={{display:"flex", alignItems:"center", gap:8, flexWrap:"wrap"}}>
+                <div style={{display:"flex", alignItems:"center", gap:4}}>
+                  <span style={{fontSize:12, color:"#FFD700"}}>★</span>
+                  <span style={{fontFamily:"DM Mono,monospace", fontSize:12, fontWeight:600, color:C.text}}>{c.rating}</span>
+                  <span style={{fontSize:11, color:C.muted}}>({c.reviews} reseñas)</span>
+                </div>
+                <div style={{background:"rgba(200,162,39,0.1)", border:"1px solid rgba(200,162,39,0.25)", borderRadius:6, padding:"2px 8px", fontSize:9, color:C.brand, fontFamily:"DM Mono,monospace"}}>🥈 PLATA</div>
+                <div style={{background: c.open?"rgba(0,200,150,0.1)":"rgba(224,48,80,0.1)", border:`1px solid ${c.open?"rgba(0,200,150,0.3)":"rgba(224,48,80,0.3)"}`, borderRadius:6, padding:"2px 8px", fontSize:9, color: c.open?C.priceGood:C.priceBad, fontFamily:"DM Mono,monospace"}}>{c.open?"ABIERTO":"CERRADO"}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Info rápida */}
+          <div style={{display:"flex", flexDirection:"column", gap:7}}>
+            {[
+              [<Icon.MapPin size={13} color={C.muted}/>, c.address],
+              [<Icon.Phone size={13} color={C.muted}/>, c.phone],
+              c.domicilio && [<Icon.Truck size={13} color={C.brand}/>, "Retiro a domicilio disponible"],
+            ].filter(Boolean).map((row, i) => (
+              <div key={i} style={{display:"flex", alignItems:"center", gap:8}}>
+                {row[0]}
+                <span style={{fontSize:12, color:C.muted}}>{row[1]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Horario + info práctica */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:16, marginBottom:12}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:12}}>HORARIO Y CONDICIONES</div>
+          <div style={{display:"flex", flexDirection:"column", gap:10}}>
+            {/* Horario */}
+            <div style={{display:"flex", gap:10, alignItems:"flex-start"}}>
+              <span style={{fontSize:14, flexShrink:0}}>🕐</span>
+              <div>
+                <div style={{fontSize:11, fontWeight:600, color:C.text, marginBottom:3}}>Horario de atención</div>
+                {extra.horario.map((h,i)=><div key={i} style={{fontSize:11, color:C.muted}}>{h}</div>)}
+              </div>
+            </div>
+            {/* Mínimo kg */}
+            <div style={{display:"flex", gap:10, alignItems:"center"}}>
+              <span style={{fontSize:14}}>⚖️</span>
+              <div style={{flex:1}}>
+                <span style={{fontSize:11, fontWeight:600, color:C.text}}>Mínimo de ingreso: </span>
+                <span style={{fontSize:11, color:C.muted}}>{extra.minKg} kg</span>
+              </div>
+            </div>
+            {/* Tiempo atención */}
+            <div style={{display:"flex", gap:10, alignItems:"center"}}>
+              <span style={{fontSize:14}}>⏱️</span>
+              <div style={{flex:1}}>
+                <span style={{fontSize:11, fontWeight:600, color:C.text}}>Tiempo de atención: </span>
+                <span style={{fontSize:11, color:C.muted}}>{extra.tiempoAtencion}</span>
+              </div>
+            </div>
+            {/* Formas de pago */}
+            <div style={{display:"flex", gap:10, alignItems:"center"}}>
+              <span style={{fontSize:14}}>💳</span>
+              <div style={{flex:1, display:"flex", gap:6, flexWrap:"wrap"}}>
+                {extra.pagos.map(p=>(
+                  <span key={p} style={{background:C.card2, border:`1px solid ${C.border}`, borderRadius:6, padding:"3px 8px", fontSize:10, color:C.muted}}>{p}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Metales que acepta */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:16, marginBottom:12}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>METALES QUE ACEPTA</div>
+          <div style={{display:"flex", flexWrap:"wrap", gap:8}}>
+            {METALS.map(m => {
+              const acepta = extra.metales.includes(m.symbol);
+              return (
+                <div key={m.id} style={{
+                  display:"flex", alignItems:"center", gap:6,
+                  background: acepta ? `rgba(0,200,150,0.06)` : C.card2,
+                  border:`1px solid ${acepta ? "rgba(0,200,150,0.2)" : C.border}`,
+                  borderRadius:10, padding:"7px 12px", opacity: acepta?1:0.4
+                }}>
+                  <span style={{fontFamily:"DM Mono,monospace", fontSize:11, fontWeight:700, color:acepta?m.color:C.muted}}>{m.symbol}</span>
+                  <span style={{fontSize:10, color:acepta?C.text:C.muted}}>{m.name}</span>
+                  {acepta && <span style={{fontSize:9, color:C.priceGood}}>✓</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Precios que paga */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:16, marginBottom:12}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>PRECIOS QUE PAGA HOY</div>
+          <div style={{display:"flex", flexWrap:"wrap", gap:8}}>
+            {METALS.slice(0,4).map(m => (
+              <div key={m.id} style={{flex:1, minWidth:70, background:C.card2, borderRadius:10, padding:"8px 10px", textAlign:"center"}}>
+                <div style={{fontFamily:"DM Mono,monospace", fontSize:10, color:m.color, fontWeight:700, marginBottom:3}}>{m.symbol}</div>
+                <div style={{fontFamily:"DM Mono,monospace", fontSize:12, fontWeight:600, color:C.priceGood}}>${Math.round(m.kg*0.88).toLocaleString("es-AR")}</div>
+                <div style={{fontSize:8, color:C.muted, marginTop:1}}>/kg</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Insignias */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:16, marginBottom:12}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>INSIGNIAS</div>
+          <div style={{display:"flex", gap:10}}>
+            {INSIGNIAS_COMPRADOR.map((ins, i) => (
+              <div key={ins.id} style={{textAlign:"center", opacity: i<=1 ? 1 : 0.25}}>
+                <div style={{fontSize:22, marginBottom:3, filter: i<=1?"none":"grayscale(1)"}}>{ins.emoji}</div>
+                <div style={{fontSize:7, fontFamily:"DM Mono,monospace", color: i<=1?ins.color:C.muted}}>{ins.nombre.toUpperCase()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Reseñas */}
+        <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>RESEÑAS RECIENTES</div>
+        {reseñas.map((r, i) => (
+          <div key={i} style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6}}>
+              <div style={{display:"flex", gap:2}}>
+                {[1,2,3,4,5].map(s => <span key={s} style={{fontSize:11, filter: s<=r.stars?"none":"grayscale(1) opacity(0.3)"}}>⭐</span>)}
+              </div>
+              <span style={{fontSize:10, color:C.muted, fontFamily:"DM Mono,monospace"}}>{r.fecha}</span>
+            </div>
+            <div style={{fontSize:12, color:C.text, lineHeight:1.6, marginBottom:6}}>{r.texto}</div>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+              <span style={{fontSize:10, color:C.muted}}>— {r.autor}</span>
+              <div style={{background:`rgba(200,162,39,0.08)`, border:`1px solid rgba(200,162,39,0.2)`, borderRadius:6, padding:"2px 8px", fontSize:9, color:C.brand}}>{r.tag}</div>
+            </div>
+          </div>
+        ))}
+
+        {/* CTAs */}
+        <button onClick={onResena} style={{...S.btnP, marginBottom:8}}>⭐ Dejar reseña</button>
+        {onChat && <button onClick={onChat} style={{...S.btnG, width:"100%", marginBottom:8, display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Enviar mensaje
+        </button>}
+        <div style={{display:"flex", gap:8}}>
+          <button style={{...S.btnG, flex:1}}><Icon.Phone size={14}/> Llamar</button>
+          <button style={{...S.btnG, flex:1, background:C.brand, color:C.dark, border:"none", fontWeight:700}}>WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PERFIL PÚBLICO — VENDEDOR ─────────────────────────────────
+function PerfilVendedorScreen({ vendedor, onBack }) {
+  const reseñas = [
+    { autor:"Depósito San Martín", stars:5, fecha:"08/03/2026", texto:"Material en perfecto estado, pesó exacto. Muy recomendable." },
+    { autor:"MetalRecicla",        stars:4, fecha:"20/02/2026", texto:"Puntual y honesto con la descripción del material." },
+  ];
+  const v = vendedor || { name:"Carlos M.", ventas:8, kg:94, insignia:"plata" };
+
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div className="back" onClick={onBack}><Icon.ArrowLeft/><span className="back-label">Volver</span></div>
+      <div style={{padding:"0 20px"}}>
+
+        {/* Header */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding:20, marginBottom:12}}>
+          <div style={{display:"flex", alignItems:"center", gap:14, marginBottom:14}}>
+            <div style={{width:52, height:52, borderRadius:"50%", background:`linear-gradient(135deg,#C8A227,#8A6C10)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:700, color:C.dark, flexShrink:0}}>
+              {(v.name||"U")[0]}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16, fontWeight:700, color:C.text, marginBottom:4}}>{v.name}</div>
+              <div style={{display:"flex", gap:8, alignItems:"center"}}>
+                <div style={{background:"rgba(192,192,192,0.1)", border:"1px solid rgba(192,192,192,0.25)", borderRadius:6, padding:"2px 8px", fontSize:9, color:"#C0C0C0", fontFamily:"DM Mono,monospace"}}>🥈 PLATA</div>
+                <span style={{fontSize:11, color:C.muted}}>Vendedor verificado</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div style={{display:"flex", gap:8}}>
+            {[["VENTAS",v.ventas],["KG TOTALES",v.kg],["EN FUNDIX","2 meses"]].map(([lbl,val],i)=>(
+              <div key={i} style={{flex:1, background:C.card2, borderRadius:10, padding:"10px 8px", textAlign:"center"}}>
+                <div style={{fontFamily:"DM Mono,monospace", fontSize:8, color:C.muted, letterSpacing:1, marginBottom:4}}>{lbl}</div>
+                <div style={{fontFamily:"DM Mono,monospace", fontSize:14, fontWeight:700, color:C.text}}>{val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Zona + disponibilidad */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:16, marginBottom:12}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:12}}>DISPONIBILIDAD Y ZONA</div>
+          <div style={{display:"flex", gap:10}}>
+            <div style={{flex:1, background:"rgba(0,200,150,0.07)", border:"1px solid rgba(0,200,150,0.2)", borderRadius:10, padding:"10px 12px", textAlign:"center"}}>
+              <div style={{fontSize:18, marginBottom:4}}>🟢</div>
+              <div style={{fontSize:11, fontWeight:700, color:C.priceGood}}>Disponible hoy</div>
+              <div style={{fontSize:10, color:C.muted, marginTop:2}}>Puede coordinar ahora</div>
+            </div>
+            <div style={{flex:1, background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", textAlign:"center"}}>
+              <div style={{fontSize:18, marginBottom:4}}>📍</div>
+              <div style={{fontSize:11, fontWeight:700, color:C.text}}>Lanús, GBA Sur</div>
+              <div style={{fontSize:10, color:C.muted, marginTop:2}}>Zona de operación</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Foto del material */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:16, marginBottom:12}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>FOTO DEL MATERIAL</div>
+          <div style={{display:"flex", gap:8}}>
+            {["🔶","⬜","🟫"].map((em,i)=>(
+              <div key={i} style={{flex:1, background:C.card2, border:`1px solid ${C.border}`, borderRadius:10, height:70, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4}}>
+                <span style={{fontSize:24}}>{em}</span>
+                <span style={{fontSize:8, color:C.muted}}>{["Cobre","Aluminio","Bronce"][i]}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:10, color:C.muted, marginTop:8, textAlign:"center"}}>Material disponible para venta inmediata</div>
+        </div>
+
+        {/* Insignias */}
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:16, marginBottom:12}}>
+          <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>INSIGNIAS</div>
+          <div style={{display:"flex", gap:10}}>
+            {INSIGNIAS_VENDEDOR.map((ins, i) => (
+              <div key={ins.id} style={{textAlign:"center", opacity: i<=1 ? 1 : 0.25}}>
+                <div style={{fontSize:22, marginBottom:3, filter: i<=1?"none":"grayscale(1)"}}>{ins.emoji}</div>
+                <div style={{fontSize:7, fontFamily:"DM Mono,monospace", color: i<=1?ins.color:C.muted}}>{ins.nombre.toUpperCase()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Badge verificado */}
+        <div style={{background:"rgba(58,143,216,0.07)", border:"1px solid rgba(58,143,216,0.2)", borderRadius:12, padding:"10px 14px", marginBottom:12, display:"flex", alignItems:"center", gap:10}}>
+          <span style={{fontSize:18}}>✅</span>
+          <div>
+            <div style={{fontSize:12, fontWeight:700, color:"#3A8FD8"}}>Identidad verificada por Fundix</div>
+            <div style={{fontSize:10, color:C.muted, marginTop:2}}>DNI validado · Sin conflictos registrados</div>
+          </div>
+        </div>
+
+        {/* Reseñas de compradores */}
+        <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.muted, letterSpacing:2, marginBottom:10}}>RESEÑAS DE COMPRADORES</div>
+        {reseñas.map((r,i) => (
+          <div key={i} style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6}}>
+              <div style={{display:"flex", gap:2}}>
+                {[1,2,3,4,5].map(s=><span key={s} style={{fontSize:11, filter:s<=r.stars?"none":"grayscale(1) opacity(0.3)"}}>⭐</span>)}
+              </div>
+              <span style={{fontSize:10, color:C.muted, fontFamily:"DM Mono,monospace"}}>{r.fecha}</span>
+            </div>
+            <div style={{fontSize:12, color:C.text, lineHeight:1.6, marginBottom:4}}>{r.texto}</div>
+            <span style={{fontSize:10, color:C.muted}}>— {r.autor}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+// ── CHAT ─────────────────────────────────────────────────────
+const CHATS_MOCK = [
+  { id:1, nombre:"Depósito San Martín", ultimo:"Perfecto, te espero mañana a las 9.", hora:"10:32", unread:0, tipo:"comprador", online:true  },
+  { id:2, nombre:"MetalRecicla",        ultimo:"¿Cuántos kilos tenés en total?",      hora:"Ayer",  unread:2, tipo:"comprador", online:false },
+  { id:3, nombre:"María G.",            ultimo:"Sí, tengo unos 40 kg de cobre.",       hora:"Lun",   unread:0, tipo:"vendedor",  online:true  },
+];
+
+const MENSAJES_MOCK = {
+  1: [
+    { id:1, de:"ellos", texto:"Hola, vi tu perfil en Fundix. ¿Tenés cobre disponible?", hora:"10:10" },
+    { id:2, de:"yo",    texto:"Sí, tengo unos 30 kg. ¿Qué precio estás pagando?",        hora:"10:12" },
+    { id:3, de:"ellos", texto:"Hoy estamos a $9.200/kg. ¿Podés traerlo mañana?",         hora:"10:15" },
+    { id:4, de:"yo",    texto:"Sí, puedo a la mañana.",                                   hora:"10:20" },
+    { id:5, de:"ellos", texto:"Perfecto, te espero mañana a las 9.",                      hora:"10:32" },
+  ],
+  2: [
+    { id:1, de:"ellos", texto:"Buen día, te contactamos desde MetalRecicla.", hora:"09:00" },
+    { id:2, de:"ellos", texto:"¿Cuántos kilos tenés en total?",               hora:"09:01" },
+  ],
+  3: [
+    { id:1, de:"yo",    texto:"Hola María, vi que tenés aluminio disponible.", hora:"Lun 14:00" },
+    { id:2, de:"ellos", texto:"Sí, tengo unos 40 kg de cobre.",                hora:"Lun 14:05" },
+  ],
+};
+
+function ChatListScreen({ onBack, onChat, rol }) {
+  return (
+    <div className="fade" style={{paddingBottom:100}}>
+      <div style={{padding:"20px 20px 0"}}>
+        <div style={{fontFamily:"DM Mono,monospace", fontSize:9, color:C.brand, letterSpacing:2, marginBottom:4}}>MENSAJES</div>
+        <div className="wiz-q" style={{marginBottom:4}}>Chat</div>
+        <div className="wiz-hint">Tus conversaciones con {rol==="comprador"?"vendedores":"compradores"}.</div>
+      </div>
+
+      {CHATS_MOCK.length === 0 ? (
+        <div style={{textAlign:"center", padding:"48px 20px"}}>
+          <div style={{fontSize:48, marginBottom:12}}>💬</div>
+          <div style={{fontSize:14, fontWeight:700, color:C.text, marginBottom:6}}>Sin mensajes todavía</div>
+          <div style={{fontSize:12, color:C.muted, lineHeight:1.6}}>Cuando contactes a alguien aparece acá.</div>
+        </div>
+      ) : (
+        <div style={{padding:"8px 12px"}}>
+          {CHATS_MOCK.map(chat => (
+            <div key={chat.id} onClick={()=>onChat(chat)}
+              style={{display:"flex", alignItems:"center", gap:12, padding:"14px 8px",
+                borderBottom:`1px solid ${C.border}`, cursor:"pointer"}}>
+              {/* Avatar */}
+              <div style={{position:"relative", flexShrink:0}}>
+                <div style={{width:46, height:46, borderRadius:"50%",
+                  background: chat.tipo==="comprador"
+                    ? "linear-gradient(135deg,#1A1200,#100E00)"
+                    : "linear-gradient(135deg,#C8A227,#8A6C10)",
+                  border:`1.5px solid ${chat.tipo==="comprador"?"rgba(200,162,39,0.3)":"rgba(200,162,39,0.6)"}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:18}}>
+                  {chat.tipo==="comprador" ? "🏭" : chat.nombre[0]}
+                </div>
+                {chat.online && (
+                  <div style={{position:"absolute", bottom:1, right:1, width:10, height:10,
+                    borderRadius:"50%", background:C.priceGood,
+                    border:`2px solid ${C.dark}`}}/>
+                )}
+              </div>
+              {/* Info */}
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{display:"flex", justifyContent:"space-between", marginBottom:3}}>
+                  <span style={{fontSize:13, fontWeight:chat.unread>0?700:600, color:C.text,
+                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{chat.nombre}</span>
+                  <span style={{fontSize:10, color:C.muted, flexShrink:0, marginLeft:8}}>{chat.hora}</span>
+                </div>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                  <span style={{fontSize:12, color:C.muted, overflow:"hidden",
+                    textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1}}>{chat.ultimo}</span>
+                  {chat.unread > 0 && (
+                    <div style={{width:18, height:18, borderRadius:"50%", background:C.brand,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:9, fontWeight:700, color:C.dark, flexShrink:0, marginLeft:6}}>
+                      {chat.unread}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChatConversacionScreen({ chat, onBack }) {
+  const [texto, setTexto]       = useState("");
+  const [mensajes, setMensajes] = useState(MENSAJES_MOCK[chat?.id] || []);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({behavior:"smooth"});
+  }, [mensajes]);
+
+  const enviar = () => {
+    if (!texto.trim()) return;
+    const nuevo = { id: mensajes.length+1, de:"yo", texto: texto.trim(), hora:"Ahora" };
+    setMensajes(prev => [...prev, nuevo]);
+    setTexto("");
+    setTimeout(()=> bottomRef.current?.scrollIntoView({behavior:"smooth"}), 50);
+  };
+
+  const c = chat || CHATS_MOCK[0];
+
+  return (
+    <div className="fade" style={{display:"flex", flexDirection:"column", minHeight:"100%", paddingBottom:0}}>
+      {/* Header */}
+      <div style={{background:C.card, borderBottom:`1px solid ${C.border}`,
+        padding:"12px 16px", display:"flex", alignItems:"center", gap:12, flexShrink:0}}>
+        <div onClick={onBack} style={{cursor:"pointer", padding:4}}>
+          <Icon.ArrowLeft size={20} color={C.muted}/>
+        </div>
+        <div style={{width:36, height:36, borderRadius:"50%",
+          background: c.tipo==="comprador"?"linear-gradient(135deg,#1A1200,#100E00)":"linear-gradient(135deg,#C8A227,#8A6C10)",
+          border:`1.5px solid rgba(200,162,39,0.3)`,
+          display:"flex", alignItems:"center", justifyContent:"center", fontSize:16}}>
+          {c.tipo==="comprador" ? "🏭" : c.nombre[0]}
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14, fontWeight:700, color:C.text}}>{c.nombre}</div>
+          <div style={{fontSize:10, color: c.online?C.priceGood:C.muted}}>
+            {c.online ? "● En línea" : "Última vez: ayer"}
+          </div>
+        </div>
+        {/* Acciones rápidas */}
+        <div style={{display:"flex", gap:8}}>
+          <div style={{width:32, height:32, borderRadius:"50%", background:C.card2,
+            border:`1px solid ${C.border}`, display:"flex", alignItems:"center",
+            justifyContent:"center", cursor:"pointer"}}>
+            <Icon.Phone size={14} color={C.muted}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Mensajes */}
+      <div style={{height:380, overflowY:"auto", padding:"16px 16px 8px", display:"flex", flexDirection:"column", gap:8}}>
+        {/* Aviso Fundix */}
+        <div style={{textAlign:"center", margin:"4px 0 8px"}}>
+          <span style={{background:C.card2, border:`1px solid ${C.border}`, borderRadius:20,
+            padding:"4px 12px", fontSize:9, color:C.muted, fontFamily:"DM Mono,monospace"}}>
+            🔒 Chat seguro · Fundix modera las conversaciones
+          </span>
+        </div>
+
+        {mensajes.map(m => (
+          <div key={m.id} style={{display:"flex",
+            justifyContent: m.de==="yo" ? "flex-end" : "flex-start"}}>
+            <div style={{
+              maxWidth:"75%",
+              background: m.de==="yo"
+                ? `linear-gradient(135deg,#1E1600,#C8A22720)`
+                : C.card,
+              border:`1px solid ${m.de==="yo" ? "rgba(200,162,39,0.3)" : C.border}`,
+              borderRadius: m.de==="yo" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              padding:"10px 13px",
+            }}>
+              <div style={{fontSize:13, color:C.text, lineHeight:1.55}}>{m.texto}</div>
+              <div style={{fontSize:9, color:C.muted, marginTop:4, textAlign:"right",
+                fontFamily:"DM Mono,monospace"}}>{m.hora}</div>
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef}/>
+      </div>
+
+      {/* Input */}
+      <div style={{background:C.card, borderTop:`1px solid ${C.border}`,
+        padding:"10px 12px", display:"flex", gap:8, alignItems:"center", flexShrink:0}}>
+        <input
+          value={texto}
+          onChange={e=>setTexto(e.target.value)}
+          onKeyDown={e=>e.key==="Enter" && enviar()}
+          placeholder="Escribí un mensaje..."
+          style={{...S.input, flex:1, padding:"10px 14px", borderRadius:20, margin:0}}
+        />
+        <div onClick={enviar} style={{
+          width:40, height:40, borderRadius:"50%", flexShrink:0,
+          background: texto.trim() ? C.brand : C.card2,
+          border:`1px solid ${texto.trim() ? "transparent" : C.border}`,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          cursor:"pointer", transition:"all 0.15s"
+        }}>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none"
+            stroke={texto.trim() ? C.dark : C.muted} strokeWidth="2.5"
+            strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN ──────────────────────────────────────────────────────
+function Fundix() {
+  const [view,     setView]     = useState("onboarding");
+  const [selMetal, setSelMetal] = useState(null);
+  const [selKg,    setSelKg]    = useState(null);
+  const [user,     setUser]     = useState(null);
+  const [rol,      setRol]      = useState("vendedor");
+  const [compradores, setCompradores] = useState(COMPRADORES);
+  const [vendedores,  setVendedores]  = useState(VENDEDORES);
+  const [selComprador, setSelComprador] = useState(null);
+  const [selChat,      setSelChat]      = useState(null);
+
+  const goHome  = () => { setView("home"); setSelMetal(null); setSelKg(null); };
+  const isWizard = ["pick-metal","enter-kg","result"].includes(view);
+  const noNav    = ["onboarding","login","register"].includes(view);
+
+  // Nav adapts to rol
+  const NAV = [
+    { id:"home",    label:"INICIO",   icon:(on)=><Icon.Home      size={20} color={on?C.brand:C.muted}/> },
+    { id:"cuanto",  label:"PRECIO",   icon:(on)=><Icon.DollarSign size={20} color={on?C.brand:C.muted}/> },
+    { id:"donde",   label: rol==="comprador" ? "VENDEDORES" : "COMPRADORES", icon:(on)=><Icon.MapPin size={20} color={on?C.brand:C.muted}/> },
+    { id:"chat",    label:"MENSAJES", icon:(on)=>(
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={on?C.brand:C.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+    )},
+    { id:"alertas", label:"ALERTAS",  icon:(on)=>(
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={on?C.brand:C.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+    )},
+    { id:"profile", label:user?"PERFIL":"ENTRAR", icon:(on)=>(
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={on?C.brand:C.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+    )},
+  ];
+
+  const gated = (dest) => user ? dest : "login";
+
+  const renderView = () => {
+    switch (view) {
+      case "onboarding": return <Onboarding onDone={(r)=>{ setRol(r); setView("home"); }}/>;
+      case "login":      return <LoginScreen
+                            onBack={()=>setView("home")}
+                            onLogin={()=>{ setUser({name:"Usuario",verified:false}); setView("home"); }}
+                            onRegister={()=>setView("register")}/>;
+      case "register":   return <RegisterScreen
+                            onBack={()=>setView("login")}
+                            onDone={()=>{ setUser({name:"Usuario",verified:true}); setView("home"); }}/>;
+
+      case "home":       return <Home
+                            rol={rol} user={user}
+                            onCuanto={()=>setView(gated("pick-metal"))}
+                            onDonde={()=>setView("donde")}
+                            onIA={()=>setView(gated("ia"))}
+                            onHistorial={()=>setView(gated("historial"))}
+                            onRetiro={()=>setView(gated("retiro"))}
+                            onB2B={()=>setView(gated("b2b"))}
+                            onPlanes={()=>setView("planes")} onSumate={()=>setView("sumate")}
+                            onLogin={()=>setView("login")}/>;
+
+      case "pick-metal": return <PickMetal onBack={goHome} onNext={m=>{setSelMetal(m);setView("enter-kg");}}/>;
+      case "enter-kg":   return <EnterKg metal={selMetal} onBack={()=>setView("pick-metal")} onResult={kg=>{setSelKg(kg);setView("result");}}/>;
+      case "result":     return <Result metal={selMetal} kg={selKg} onDonde={()=>setView("donde")} onBack={()=>setView("enter-kg")}/>;
+      case "donde":      return <DondeVender metal={selMetal} onBack={()=>setView(selMetal?"result":"home")} compradores={compradores} vendedores={vendedores} rol={rol} onVerPerfil={(c)=>{ setSelComprador(c); setView("perfil-comprador"); }} onVerPerfilVendedor={(v)=>{ setView("perfil-vendedor"); }}/>;
+      case "ia":         return <IAScreen onBack={goHome}/>;
+
+      case "historial":  return <HistorialScreen onBack={goHome}/>;
+      case "chat":       return <ChatListScreen rol={rol} onBack={goHome} onChat={(c)=>{ setSelChat(c); setView("chat-conv"); }}/>;
+      case "chat-conv":  return <ChatConversacionScreen chat={selChat} onBack={()=>setView("chat")}/>;
+      case "alertas":    return <AlertasScreen onBack={goHome}/>;
+      case "retiro":     return <RetiroScreen onBack={goHome}/>;
+      case "b2b":        return <B2BScreen onBack={goHome}/>;
+      case "resena":        return <ReseñaScreen comprador={null} onBack={()=>setView("perfil-comprador")} onDone={goHome}/>;
+      case "perfil-comprador": return <PerfilCompradorScreen comprador={selComprador} onBack={()=>setView("donde")} onResena={()=>setView("resena")} onChat={()=>{ setSelChat(selComprador ? {...selComprador, tipo:"comprador", online:true} : CHATS_MOCK[0]); setView("chat-conv"); }}/>;
+      case "perfil-vendedor":  return <PerfilVendedorScreen vendedor={null} onBack={()=>setView("historial")}/>;
+      case "insignias":  return <InsigniasScreen onBack={()=>setView(user?"profile":"home")} rol={rol}/>;
+      case "panel":      return <PanelCompradorScreen onBack={()=>setView(user?"profile":"home")} onInsignias={()=>setView("insignias")}/>;
+      case "planes":     return <PlanesCompradorScreen onBack={()=>setView(user?"profile":"home")}/>;
+      case "sumate":     return <SumateScreen onBack={()=>setView("home")} onDone={(datos)=>{ setUser({name: datos.nombre || "Comprador",verified:true}); setCompradores(prev=>[...prev,{id:prev.length+1,name:datos.nombre||"Tu negocio",dist:"0 m",rating:0,reviews:0,open:true,phone:datos.whatsapp||"",domicilio:datos.retiro||false,nivel:"normal",address:datos.direccion||""}]); setView("profile"); }}/>;
+      case "profile":    return <ProfileScreen user={user} rol={rol} onBack={goHome} onPlanes={()=>setView("planes")} onPanel={()=>setView("panel")} onInsignias={()=>setView("insignias")} onSumate={()=>setView("sumate")} onLogout={()=>{ setUser(null); goHome(); }}/>;
+
+      default: return null;
+    }
+  };
+
+  return (
+    <>
+      <style>{css}</style>
+      <div className="phone">
+        <div className="status"><span>09:41</span><span/><span>●●● 5G</span></div>
+
+        {!noNav && (
+          <div className="hdr">
+            <div className="logo">FUNDIX</div>
+            <div className="hdr-right">
+              <Icon.Bell size={18} color={C.muted}/>
+              {user ? (
+                <div className="avatar" onClick={()=>setView("profile")} style={{cursor:"pointer"}}>
+                  <span style={{fontSize:11,fontWeight:700,color:C.brand}}>{(user.name||"U")[0]}</span>
+                </div>
+              ) : (
+                <button onClick={()=>setView("login")} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:20,padding:"5px 12px",color:C.text,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"DM Sans,sans-serif"}}>
+                  Ingresar
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="screen">{renderView()}</div>
+
+        {!noNav && (
+          <div className="bottom-nav">
+            {NAV.map(n => {
+              const on = view===n.id || (n.id==="cuanto" && isWizard);
+              return (
+                <div key={n.id} className={`nav-item ${on?"on":""}`}
+                  onClick={()=>{
+                    if      (n.id==="home")    goHome();
+                    else if (n.id==="cuanto")  { setSelMetal(null); setSelKg(null); setView(gated("pick-metal")); }
+                    else if (n.id==="alertas") setView(gated("alertas"));
+                    else if (n.id==="profile") setView(user?"profile":"login");
+                    else setView(n.id);
+                  }}>
+                  {n.icon(on)}
+                  <span className="nav-label">{n.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Fundix));
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(()=>{});
+    }
+  </script>
+</body>
+</html>
