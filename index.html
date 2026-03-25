@@ -40,6 +40,71 @@
     const { useState, useRef, useEffect } = React;
  function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }
 
+// ── SUPABASE CONFIG ──────────────────────────────────────────
+const SUPABASE_URL  = "https://dxxawezbpnowuipqynup.supabase.co";
+const SUPABASE_ANON = "sb_publishable_77EIk2pZDal42T_Ioqdm6A_l1Tybc-k";
+
+// Cliente liviano sin npm — usa la REST API directamente
+const db = {
+  async query(table, options = {}) {
+    const params = new URLSearchParams();
+    if (options.select)  params.append('select', options.select);
+    if (options.eq)      Object.entries(options.eq).forEach(([k,v]) => params.append(k, `eq.${v}`));
+    if (options.order)   params.append('order', options.order);
+    if (options.limit)   params.append('limit', options.limit);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+      }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+  async insert(table, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+  async rpc(fn, params = {}) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+};
+
+// Precios desde Supabase (con fallback a hardcoded)
+async function cargarPrecios() {
+  try {
+    const data = await db.rpc('get_precios_hoy');
+    if (data && data.length > 0) {
+      return data.map(p => {
+        const m = METALS.find(x => x.symbol === p.metal);
+        return m ? { ...m, kg: p.precio_ars, change: p.variacion_pct } : m;
+      }).filter(Boolean);
+    }
+  } catch(e) { console.warn('Usando precios offline:', e.message); }
+  return null;
+}
+
 // ── COLORES ──────────────────────────────────────────────────
 const C = {
   priceGood: "#00C896",       // verde — precio normal o alto
@@ -110,6 +175,16 @@ const Icon = {
   MessageCircle: ({ size = 16, color = C.dark }) => (
     React.createElement('svg', { width: size, height: size, viewBox: "0 0 24 24"   , fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
       , React.createElement('path', { d: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"                  ,})
+    )
+  ),
+  BarChart2: ({ size = 18, color = C.muted }) => (
+    React.createElement('svg', { width: size, height: size, viewBox: "0 0 24 24"   , fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
+      , React.createElement('line', { x1: "18", y1: "20", x2: "18", y2: "10",}), React.createElement('line', { x1: "12", y1: "20", x2: "12", y2: "4",}), React.createElement('line', { x1: "6", y1: "20", x2: "6", y2: "14",}), React.createElement('line', { x1: "2", y1: "20", x2: "22", y2: "20",})
+    )
+  ),
+  Search: ({ size = 18, color = C.muted }) => (
+    React.createElement('svg', { width: size, height: size, viewBox: "0 0 24 24"   , fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
+      , React.createElement('circle', { cx: "11", cy: "11", r: "8",}), React.createElement('line', { x1: "21", y1: "21", x2: "16.65", y2: "16.65",})
     )
   ),
   ChevronRight: ({ size = 18, color = C.dark }) => (
@@ -192,14 +267,16 @@ const VENDEDORES = [
 ];
 
 const OB_SLIDES_VENDEDOR = [
-  { symbol:"Cu", color:"#B87333", step:"01 / 03", title:"Sabé cuánto vale tu metal antes de vender",   body:"Precio de referencia actualizado diariamente. Nunca más vendas sin saber cuánto vale." },
-  { symbol:"📍", isEmoji:true,    step:"02 / 03", title:"Encontrá el comprador que mejor te paga",     body:"Mapa con precios reales, calificaciones y retiro a domicilio. El comprador va a vos." },
-  { symbol:"Fe", color:"#7A8A90", step:"03 / 03", title:"La cámara identifica el metal por vos",       body:"Fotografiás el material y la app detecta el tipo y te da el precio al instante." },
+  { symbol:"Cu", color:"#B87333", step:"01 / 04", title:"Sabé cuánto vale tu metal antes de vender", body:"Ingresás el metal y los kg — te mostramos el precio internacional del día convertido a pesos. Así sabés cuánto pedir antes de llegar al acopiador." },
+  { symbol:"📍", isEmoji:true,    step:"02 / 04", title:"Compará quién te paga más cerca tuyo",       body:"Ves los acopiadores de tu zona con el precio que declaran por kg. El que está verde paga por encima del promedio. El rojo, por debajo." },
+  { symbol:"📦", isEmoji:true,    step:"03 / 04", title:"Publicá tu material y que te contacten",     body:"Cargás qué tenés, cuántos kg y cuándo podés entregar. Los acopiadores te ven y te contactan directamente por WhatsApp o llamada." },
+  { symbol:"Fe", color:"#7A8A90", step:"04 / 04", title:"La cámara identifica el metal por vos",      body:"No sabés qué metal es? Sacás una foto y la app lo detecta automáticamente. Sin tecnicismos." },
 ];
 const OB_SLIDES_COMPRADOR = [
-  { symbol:"Fe", color:"#7A8A90", step:"01 / 03", title:"Más clientes, más material, más negocio",     body:"Accedé a vendedores verificados cerca tuyo antes que la competencia lo haga." },
-  { symbol:"📍", isEmoji:true,    step:"02 / 03", title:"Tu perfil visible para miles de vendedores",  body:"Aparecer primero en el mapa con horarios, precios y si hacés retiro a domicilio." },
-  { symbol:"Cu", color:"#B87333", step:"03 / 03", title:"Precio LME real, sin intermediarios opacos",  body:"Cotización actualizada diariamente. Negociá con datos reales, no con suposiciones." },
+  { symbol:"📍", isEmoji:true,    step:"01 / 04", title:"Vendedores con material disponible cerca tuyo", body:"Ves en tiempo real quién publicó material en tu zona — con el metal, los kg y cuándo puede entregar. Llegás primero, comprás primero." },
+  { symbol:"Cu", color:"#B87333", step:"02 / 04", title:"Tu stock, tu caja y tu libro en un solo lugar", body:"Registrás cada compra en segundos. El panel calcula solo tu stock acumulado, el valor al LME de hoy y cuándo conviene vender." },
+  { symbol:"Fe", color:"#7A8A90", step:"03 / 04", title:"Libro digital que cumple con la municipalidad",  body:"Cada operación queda registrada con nombre, DNI, metal, kg y precio. Exportable en PDF para inspecciones. Sin papel, sin errores." },
+  { symbol:"📊", isEmoji:true,    step:"04 / 04", title:"Todo gratis durante el lanzamiento",              body:"El plan Gestión completo — stock, libro, caja y alertas — es gratuito para los primeros acopiadores. Cuando activemos el cobro, tu precio fundador queda fijo de por vida." },
 ];
 
 const history = [8200, 8350, 8100, 8600, 8450, 8700, 8750];
@@ -561,8 +638,24 @@ function Onboarding({ onDone }) {
 }
 
 // ── HOME ──────────────────────────────────────────────────────
-function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes, onSumate, onLogin, rol, user, onCambiarRol, onPublicar }) {
+function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes, onSumate, onLogin, rol, user, onCambiarRol, onPublicar, onPanel }) {
   const esComprador = rol === "comprador";
+  const [tooltip, setTooltip] = useState(null);
+
+  // Modal tooltip genérico
+  const TooltipModal = ({ id, titulo, cuerpo, onClose }) => (
+    React.createElement('div', { onClick: onClose, style: {position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:999,display:"flex",alignItems:"flex-end",padding:"0 0 20px"},}
+      , React.createElement('div', { onClick: e=>e.stopPropagation(), className: "fade", style: {background:"#181510",border:"1px solid rgba(200,162,39,0.25)",borderRadius:"20px 20px 16px 16px",padding:24,width:"100%",maxWidth:420,margin:"0 auto"},}
+        , React.createElement('div', { style: {width:36,height:4,borderRadius:2,background:"rgba(200,162,39,0.3)",margin:"0 auto 20px"},})
+        , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.brand,letterSpacing:2,marginBottom:8},}, "¿PARA QUÉ SIRVE?"  )
+        , React.createElement('div', { style: {fontSize:17,fontWeight:800,color:C.text,marginBottom:12,lineHeight:1.3},}, titulo)
+        , React.createElement('div', { style: {fontSize:13,color:C.muted,lineHeight:1.75,marginBottom:20},}, cuerpo)
+        , React.createElement('button', { onClick: onClose, style: {width:"100%",padding:14,background:C.brand,border:"none",borderRadius:12,color:C.dark,fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"},}, "Entendido →"
+
+        )
+      )
+    )
+  );
 
   return (
     React.createElement('div', { className: "home fade" ,}
@@ -578,11 +671,38 @@ function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes,
 
       /* Card principal según rol */
       , esComprador ? (
-        React.createElement('div', { className: "big-card", onClick: onSumate,}
-          , React.createElement('div', { className: "bc-label",}, "PARA COMPRADORES · GRATIS AHORA"    )
-          , React.createElement('div', { className: "bc-title",}, "Registrá tu negocio en el mapa"     )
-          , React.createElement('div', { className: "bc-sub",}, "Miles de vendedores van a encontrarte. Precio fundador de por vida."          )
-          , React.createElement('div', { className: "bc-arrow",}, React.createElement(Icon.ChevronRight, null ))
+        React.createElement(React.Fragment, null
+          , React.createElement('div', { className: "big-card", onClick: onSumate,}
+            , React.createElement('div', { className: "bc-label",}, "⭐ FUNDADOR · TODO GRATIS AHORA"     )
+            , React.createElement('div', { className: "bc-title",}, "Registrá tu negocio en el mapa"     )
+            , React.createElement('div', { className: "bc-sub",}, "Usás el plan Gestión completo sin costo. Precio fundador fijo cuando activemos el cobro."             )
+            , React.createElement('div', { className: "bc-arrow",}, React.createElement(Icon.ChevronRight, null ))
+          )
+
+          /* Acceso al panel de gestión */
+          , tooltip==="panel" && React.createElement(TooltipModal, {
+            id: "panel",
+            titulo: "Tu sistema de gestión"   ,
+            cuerpo: "Desde acá manejás todo tu negocio: el stock acumulado por metal y su valor al LME de hoy, el libro digital de operaciones que cumple con la ordenanza municipal, la caja del mes y alertas cuando conviene vender tu stock."                                       ,
+            onClose: ()=>setTooltip(null),}
+          )
+          , React.createElement('div', { style: {position:"relative",marginBottom:4},}
+            , React.createElement('button', { onClick: ()=>setTooltip("panel"), style: {position:"absolute",top:-10,left:16,zIndex:2,background:"#3A8FD8",color:"#fff",borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:800,fontFamily:"DM Mono,monospace",letterSpacing:1,whiteSpace:"nowrap",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:4},}, "¿QUÉ ES ESTO? "
+                 , React.createElement('span', { style: {fontSize:11},}, "→")
+            )
+            , React.createElement('div', { onClick: onPanel, style: {background:"rgba(58,143,216,0.06)",border:"1px solid rgba(58,143,216,0.3)",borderRadius:16,padding:"14px 18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"},}
+              , React.createElement('div', { style: {width:38,height:38,borderRadius:"50%",background:"rgba(58,143,216,0.12)",border:"1px solid rgba(58,143,216,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+                , React.createElement('svg', { width: 18, height: 18, viewBox: "0 0 24 24"   , fill: "none", stroke: "#3A8FD8", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round",}
+                  , React.createElement('rect', { x: "3", y: "3", width: "7", height: "7",}), React.createElement('rect', { x: "14", y: "3", width: "7", height: "7",}), React.createElement('rect', { x: "14", y: "14", width: "7", height: "7",}), React.createElement('rect', { x: "3", y: "14", width: "7", height: "7",})
+                )
+              )
+              , React.createElement('div', { style: {flex:1},}
+                , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:C.text,marginBottom:2},}, "Mi sistema de gestión"   )
+                , React.createElement('div', { style: {fontSize:11,color:C.muted},}, "Stock · Libro · Caja · Alertas de precio"        )
+              )
+              , React.createElement(Icon.ChevronRight, { size: 16, color: C.muted,})
+            )
+          )
         )
       ) : (
         React.createElement('div', { className: "big-card", onClick: onCuanto,}
@@ -595,56 +715,68 @@ function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes,
 
       /* Publicar material — solo vendedor */
       , !esComprador && (
-        React.createElement('div', { onClick: onPublicar, style: {background:"rgba(200,162,39,0.06)",border:"1px dashed rgba(200,162,39,0.35)",borderRadius:16,padding:"14px 18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"},}
-          , React.createElement('div', { style: {width:38,height:38,borderRadius:"50%",background:"rgba(200,162,39,0.12)",border:"1px solid rgba(200,162,39,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
-            , React.createElement('svg', { width: 18, height: 18, viewBox: "0 0 24 24"   , fill: "none", stroke: C.brand, strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round",}, React.createElement('line', { x1: "12", y1: "5", x2: "12", y2: "19",}), React.createElement('line', { x1: "5", y1: "12", x2: "19", y2: "12",}))
+        React.createElement('div', { style: {position:"relative",marginBottom:4},}
+          /* Badge ¿para qué sirve? */
+          , React.createElement('button', { onClick: ()=>setTooltip("publicar"), style: {position:"absolute",top:-10,left:16,zIndex:2,background:C.brand,color:C.dark,borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:800,fontFamily:"DM Mono,monospace",letterSpacing:1,whiteSpace:"nowrap",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:4},}, "¿PARA QUÉ SIRVE? "
+               , React.createElement('span', { style: {fontSize:11},}, "→")
           )
-          , React.createElement('div', { style: {flex:1},}
-            , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:C.text,marginBottom:2},}, "Publicar material" )
-            , React.createElement('div', { style: {fontSize:11,color:C.muted},}, "Avisá a compradores de tu zona que tenés material listo."         )
+          , React.createElement('div', { onClick: onPublicar, style: {background:"rgba(200,162,39,0.06)",border:"1px dashed rgba(200,162,39,0.35)",borderRadius:16,padding:"14px 18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"},}
+            , React.createElement('div', { style: {width:38,height:38,borderRadius:"50%",background:"rgba(200,162,39,0.12)",border:"1px solid rgba(200,162,39,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+              , React.createElement('svg', { width: 18, height: 18, viewBox: "0 0 24 24"   , fill: "none", stroke: C.brand, strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round",}, React.createElement('line', { x1: "12", y1: "5", x2: "12", y2: "19",}), React.createElement('line', { x1: "5", y1: "12", x2: "19", y2: "12",}))
+            )
+            , React.createElement('div', { style: {flex:1},}
+              , React.createElement('div', { style: {fontSize:14,fontWeight:700,color:C.text,marginBottom:2},}, "Publicar material" )
+              , React.createElement('div', { style: {fontSize:11,color:C.muted},}, "Avisá a compradores de tu zona que tenés material listo."         )
+            )
+            , React.createElement(Icon.ChevronRight, { size: 16, color: C.muted,})
           )
-          , React.createElement(Icon.ChevronRight, { size: 16, color: C.muted,})
         )
       )
 
       /* Grid de acciones */
-      , React.createElement('div', { className: "two-col",}
-        , React.createElement('div', { className: "sm-card", onClick: onDonde,}
-          , React.createElement('div', { className: "sm-icon",}, React.createElement(Icon.MapPin, { size: 22, color: C.brand,} ))
-          , React.createElement('div', { className: "sm-label",}, esComprador ? "Vendedores cercanos" : "¿Dónde lo vendo?")
-        )
-        , React.createElement('div', { className: "sm-card", onClick: onIA,}
-          , React.createElement('div', { className: "sm-icon",}, React.createElement(Icon.Camera, { size: 22, color: C.brand,} ))
-          , React.createElement('div', { className: "sm-label",}, esComprador ? "Identificar metal" : "¿Qué metal tengo?")
-        )
-      )
-
-      , React.createElement('div', { className: "two-col",}
-        , esComprador ? (
-          React.createElement('div', { className: "sm-card", onClick: onB2B,}
+      , esComprador ? (
+        React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10},}
+          , React.createElement('div', { className: "sm-card", style: {width:"100%",textAlign:"center",alignItems:"center"}, onClick: onDonde,}
+            , React.createElement('div', { className: "sm-icon",}, React.createElement(Icon.MapPin, { size: 22, color: C.brand,} ))
+            , React.createElement('div', { className: "sm-label",}, "Ver mapa" )
+          )
+          , React.createElement('div', { className: "sm-card", style: {width:"100%",textAlign:"center",alignItems:"center"}, onClick: onHistorial,}
             , React.createElement('div', { className: "sm-icon",}
-              , React.createElement('svg', { width: 22, height: 22, viewBox: "0 0 24 24"   , fill: "none", stroke: C.blue, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
-                , React.createElement('path', { d: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"            ,}), React.createElement('polyline', { points: "9 22 9 12 15 12 15 22"       ,})
+              , React.createElement('svg', { width: 22, height: 22, viewBox: "0 0 24 24"   , fill: "none", stroke: C.brand, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
+                , React.createElement('path', { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"                 ,})
+                , React.createElement('polyline', { points: "14 2 14 8 20 8"     ,}), React.createElement('line', { x1: "16", y1: "13", x2: "8", y2: "13",}), React.createElement('line', { x1: "16", y1: "17", x2: "8", y2: "17",})
               )
             )
-            , React.createElement('div', { className: "sm-label",}, "Lotes B2B" )
-          )
-        ) : (
-          React.createElement('div', { className: "sm-card", onClick: onRetiro,}
-            , React.createElement('div', { className: "sm-icon",}
-              , React.createElement(Icon.Truck, { size: 22, color: C.brand,} )
-            )
-            , React.createElement('div', { className: "sm-label",}, "Retiro a domicilio"  )
+            , React.createElement('div', { className: "sm-label",}, "Mis operaciones" )
           )
         )
-        , React.createElement('div', { className: "sm-card", onClick: onHistorial,}
-          , React.createElement('div', { className: "sm-icon",}
-            , React.createElement('svg', { width: 22, height: 22, viewBox: "0 0 24 24"   , fill: "none", stroke: C.brand, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
-              , React.createElement('path', { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"                 ,})
-              , React.createElement('polyline', { points: "14 2 14 8 20 8"     ,}), React.createElement('line', { x1: "16", y1: "13", x2: "8", y2: "13",}), React.createElement('line', { x1: "16", y1: "17", x2: "8", y2: "17",})
+      ) : (
+        React.createElement(React.Fragment, null
+          , React.createElement('div', { className: "two-col",}
+            , React.createElement('div', { className: "sm-card", onClick: onDonde,}
+              , React.createElement('div', { className: "sm-icon",}, React.createElement(Icon.MapPin, { size: 22, color: C.brand,} ))
+              , React.createElement('div', { className: "sm-label",}, "¿Dónde lo vendo?"  )
+            )
+            , React.createElement('div', { className: "sm-card", onClick: onHistorial,}
+              , React.createElement('div', { className: "sm-icon",}
+                , React.createElement('svg', { width: 22, height: 22, viewBox: "0 0 24 24"   , fill: "none", stroke: C.brand, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round",}
+                  , React.createElement('path', { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"                 ,})
+                  , React.createElement('polyline', { points: "14 2 14 8 20 8"     ,}), React.createElement('line', { x1: "16", y1: "13", x2: "8", y2: "13",}), React.createElement('line', { x1: "16", y1: "17", x2: "8", y2: "17",})
+                )
+              )
+              , React.createElement('div', { className: "sm-label",}, "Mis ventas" )
             )
           )
-          , React.createElement('div', { className: "sm-label",}, esComprador ? "Mis operaciones" : "Mis ventas")
+          , React.createElement('div', { className: "two-col",}
+            , React.createElement('div', { className: "sm-card", onClick: onRetiro,}
+              , React.createElement('div', { className: "sm-icon",}, React.createElement(Icon.Truck, { size: 22, color: C.brand,} ))
+              , React.createElement('div', { className: "sm-label",}, "Retiro a domicilio"  )
+            )
+            , React.createElement('div', { className: "sm-card", onClick: onIA,}
+              , React.createElement('div', { className: "sm-icon",}, React.createElement(Icon.Camera, { size: 22, color: C.brand,} ))
+              , React.createElement('div', { className: "sm-label",}, "¿Qué metal tengo?"  )
+            )
+          )
         )
       )
 
@@ -687,6 +819,14 @@ function Home({ onCuanto, onDonde, onIA, onHistorial, onRetiro, onB2B, onPlanes,
             , React.createElement('div', { style: {fontSize:10,color:C.muted,marginTop:1},}, "Crear cuenta gratis · toma 1 minuto"      )
           )
           , React.createElement('svg', { width: 14, height: 14, viewBox: "0 0 24 24"   , fill: "none", stroke: C.muted, strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round",}, React.createElement('polyline', { points: "9 18 15 12 9 6"     ,}))
+        )
+      )
+      /* Tooltips modales */
+      , tooltip==="publicar" && (
+        React.createElement(TooltipModal, {
+          titulo: "Publicar material" ,
+          cuerpo: "Cargás qué metal tenés, cuántos kg y cuándo podés entregar. Los acopiadores de tu zona lo ven en tiempo real y te contactan por WhatsApp o llamada directamente. No tenés que ir a buscarlos — ellos te encuentran a vos."                                       ,
+          onClose: ()=>setTooltip(null),}
         )
       )
     )
@@ -1636,7 +1776,8 @@ function ProfileScreen({ user, rol, onBack, onLogout, onPlanes, onPanel, onInsig
             )
           )
           , rol==="comprador" && (
-            React.createElement('button', { onClick: onPanel, style: {flex:1,background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:11,fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:12,color:C.text,cursor:"pointer"},}, "Mi panel →"
+            React.createElement('button', { onClick: onPanel, style: {flex:1,background:C.card2,border:"1px solid rgba(200,162,39,0.25)",borderRadius:10,padding:11,fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:12,color:C.text,cursor:"pointer",position:"relative"},}
+              , React.createElement('div', { style: {position:"absolute",top:-8,right:8,background:C.brand,color:C.dark,borderRadius:4,padding:"1px 6px",fontFamily:"DM Mono,monospace",fontSize:7,fontWeight:800,letterSpacing:1},}, "GRATIS AHORA" ), "Mi panel →"
 
             )
           )
@@ -2011,7 +2152,14 @@ function PanelCompradorScreen({ onBack }) {
       , React.createElement('div', { className: "back", onClick: onBack,}, React.createElement(Icon.ArrowLeft, null), React.createElement('span', { className: "back-label",}, "Volver"))
       , React.createElement('div', { style: {padding:"0 20px"},}
 
-        , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.brand,letterSpacing:2,marginBottom:4},}, "PLAN GESTIÓN" )
+        /* Banner fundador */
+        , React.createElement('div', { style: {background:"linear-gradient(135deg,#1A1200,#100E00)",border:"1px solid rgba(200,162,39,0.3)",borderRadius:14,padding:12,marginBottom:14,display:"flex",alignItems:"center",gap:10},}
+          , React.createElement('span', { style: {fontSize:18,flexShrink:0},}, "⭐")
+          , React.createElement('div', { style: {flex:1},}
+            , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:8,color:C.brand,letterSpacing:2,marginBottom:2},}, "ACCESO FUNDADOR · GRATIS AHORA"    )
+            , React.createElement('div', { style: {fontSize:11,color:C.muted,lineHeight:1.6},}, "Estás usando el plan Gestión completo sin costo. Cuando activemos el cobro, tu precio fundador queda "                , React.createElement('strong', { style: {color:C.text},}, "fijo de por vida"   ), ".")
+          )
+        )
         , React.createElement('div', { className: "wiz-q", style: {marginBottom:16},}, "Mi panel" )
 
         /* Tabs */
@@ -2994,6 +3142,7 @@ function PublicarMaterialScreen({ onBack, onPublicado, userVerificado }) {
 // ── BUSCAR (COMPRADOR) — fusión material + contactos ──────────
 function BuscarScreen({ onBack, user }) {
   const [tab, setTab] = useState("publicaciones");
+  const [error, setError] = useState(null);
 
   const publicaciones = [
     { id:1, nombre:"Carlos M.",  zona:"Lanús",      metal:"Cu", kg:38,  tiempo:"hace 20 min",  visto:false, tel:"11-4521-8890" },
@@ -3010,7 +3159,7 @@ function BuscarScreen({ onBack, user }) {
   ];
 
   // Kg por metal en zona esta semana
-  const kgPorMetal = METALS.map(m => {
+  const kgPorMetal = (METALS||[]).map(m => {
     const total = publicaciones.filter(p => p.metal === m.symbol).reduce((a,p) => a+p.kg, 0);
     return { ...m, total };
   }).filter(m => m.total > 0);
@@ -3019,7 +3168,7 @@ function BuscarScreen({ onBack, user }) {
   const isPro = false;
 
   const CardVendedor = ({ v, i, bloqueado }) => {
-    const metal = METALS.find(m => m.symbol === v.metal);
+    const metal = (METALS||[]).find(m => m.symbol === v.metal) || {};
     return (
       React.createElement('div', { style: {background:v.visto===false?"rgba(200,162,39,0.05)":C.card, border:`1px solid ${v.visto===false?"rgba(200,162,39,0.3)":C.border}`, borderRadius:14, padding:14, marginBottom:8, opacity:bloqueado?0.4:1, filter:bloqueado?"blur(3px)":"none", position:"relative"},}
         , v.visto===false && React.createElement('div', { style: {position:"absolute",top:12,right:12,width:8,height:8,borderRadius:"50%",background:C.brand},})
@@ -3034,10 +3183,10 @@ function BuscarScreen({ onBack, user }) {
           , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:18,fontWeight:600,color:C.text,flexShrink:0},}, v.kg, " kg" )
         )
         , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6,marginBottom:10},}
-          , React.createElement('div', { style: {width:20,height:20,borderRadius:"50%",border:`1px solid ${_optionalChain([metal, 'optionalAccess', _24 => _24.color])||C.brand}`,display:"flex",alignItems:"center",justifyContent:"center"},}
-            , React.createElement('span', { style: {fontFamily:"DM Mono,monospace",fontSize:7,fontWeight:700,color:_optionalChain([metal, 'optionalAccess', _25 => _25.color])||C.brand},}, v.metal)
+          , React.createElement('div', { style: {width:20,height:20,borderRadius:"50%",border:`1px solid ${metal.color||C.brand}`,display:"flex",alignItems:"center",justifyContent:"center"},}
+            , React.createElement('span', { style: {fontFamily:"DM Mono,monospace",fontSize:7,fontWeight:700,color:metal.color||C.brand},}, v.metal)
           )
-          , React.createElement('span', { style: {fontSize:11,color:_optionalChain([metal, 'optionalAccess', _26 => _26.color])||C.brand,fontWeight:700},}, _optionalChain([metal, 'optionalAccess', _27 => _27.name])||v.metal)
+          , React.createElement('span', { style: {fontSize:11,color:metal.color||C.brand,fontWeight:700},}, _optionalChain([metal, 'optionalAccess', _24 => _24.name])||v.metal)
         )
         , React.createElement('div', { className: "comp-actions",}
           , v.tel ? (
@@ -3164,6 +3313,36 @@ function Fundix() {
   const [vendedores,  setVendedores]  = useState(VENDEDORES);
   const [selComprador, setSelComprador] = useState(null);
   const [selChat,      setSelChat]      = useState(null);
+  const [metals,       setMetals]       = useState(METALS);
+
+  // Cargar precios reales desde Supabase al iniciar
+  useEffect(() => {
+    cargarPrecios().then(data => {
+      if (data) setMetals(data);
+    }).catch(() => {});
+
+    // Cargar acopiadores reales
+    db.query('acopiadores', {
+      select: 'id,nombre_negocio,zona,precio_cobre,rating,total_reviews,hace_retiro,habilitado',
+      eq: { habilitado: 'true' },
+      order: 'rating.desc',
+      limit: 20
+    }).then(data => {
+      if (data && data.length > 0) {
+        setCompradores(data.map((a, i) => ({
+          id: a.id,
+          name: a.nombre_negocio,
+          dist: '— km',
+          rating: a.rating || 0,
+          reviews: a.total_reviews || 0,
+          open: true,
+          domicilio: a.hace_retiro,
+          precio: a.precio_cobre || 0,
+          address: a.zona,
+        })));
+      }
+    }).catch(() => {});
+  }, []);
 
   const goHome  = () => { setView("home"); setSelMetal(null); setSelKg(null); };
   const isWizard = ["pick-metal","enter-kg","result"].includes(view);
@@ -3237,6 +3416,7 @@ function Fundix() {
                             onPlanes: ()=>setView("planes"), onSumate: ()=>setView("sumate"),
                             onLogin: ()=>setView("login"),
                             onPublicar: ()=>setView(gated("publicar")),
+                            onPanel: ()=>setView("panel"),
                             onCambiarRol: ()=>{ try{localStorage.removeItem("fundix_rol");}catch(e){} setRol("vendedor"); setView("onboarding"); },});
 
       case "pick-metal": return React.createElement(PickMetal, { onBack: goHome, onNext: m=>{setSelMetal(m);setView("enter-kg");},});
