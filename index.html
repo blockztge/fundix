@@ -43,6 +43,32 @@
 // ── SUPABASE CONFIG ──────────────────────────────────────────
 const SUPABASE_URL  = "https://woyjxwjodzkofohtclch.supabase.co";
 const SUPABASE_ANON = "sb_publishable_avSPLtCP2PV8C7XQpl63Zg_LCejYncj";
+const safeStore = {
+  _mem: {},
+  get(key){
+    try { const v = window.sessionStorage.getItem(key); if (v !== null) return v; } catch(e) {}
+    return Object.prototype.hasOwnProperty.call(this._mem, key) ? this._mem[key] : null;
+  },
+  set(key, value){
+    this._mem[key] = String(value ?? "");
+    try { window.sessionStorage.setItem(key, String(value ?? "")); } catch(e) {}
+  },
+  remove(key){
+    delete this._mem[key];
+    try { window.sessionStorage.removeItem(key); } catch(e) {}
+  }
+};
+function fundixAuthHeaders(token){
+  return {
+    "apikey": SUPABASE_ANON,
+    "Authorization": "Bearer " + (token || SUPABASE_ANON),
+    "Content-Type": "application/json"
+  };
+}
+
+function safeText(v, fallback){ return (v===undefined || v===null || v==="") ? (fallback || "") : String(v); }
+function normalizePhone(v){ return String(v || "").replace(/[^0-9]/g, ""); }
+
 
 // Cliente liviano sin npm — usa la REST API directamente
 function dbQuery(table, options) {
@@ -1201,32 +1227,6 @@ const S = {
 };
 
 // ── LOGIN ─────────────────────────────────────────────────────
-function clearSession() {
-  try { localStorage.removeItem("fundix_token"); } catch(e) {}
-  try { localStorage.removeItem("fundix_user_id"); } catch(e) {}
-  try { localStorage.removeItem("fundix_rol"); } catch(e) {}
-}
-
-function fetchPerfilByUserId(userId, token) {
-  return fetch(
-    SUPABASE_URL + "/rest/v1/perfiles?select=id,nombre,rol,zona,telefono&id=eq." + encodeURIComponent(userId),
-    {
-      headers: {
-        "apikey": SUPABASE_ANON,
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/json"
-      }
-    }
-  )
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    if (!Array.isArray(data) || data.length === 0) {
-      throw new Error("Tu perfil está incompleto. Volvé a registrarte.");
-    }
-    return data[0];
-  });
-}
-
 function LoginScreen({ onLogin, onRegister, onBack }) {
   const [email,   setEmail]   = React.useState("");
   const [pass,    setPass]    = React.useState("");
@@ -1237,44 +1237,19 @@ function LoginScreen({ onLogin, onRegister, onBack }) {
     if (!email.includes("@")) { setError("Ingresá un email válido"); return; }
     if (pass.length < 6)      { setError("Mínimo 6 caracteres"); return; }
     setLoading(true); setError("");
-
     fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
       method: "POST",
       headers: { "apikey": SUPABASE_ANON, "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email, password: pass })
+      body: JSON.stringify({ email: email, password: pass, data: { nombre: nombre.trim(), telefono: phone.trim(), rol: rolReg, zona: zona.trim() } })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-      if (data.error) {
-        throw new Error(data.error_description || data.msg || "Email o contraseña incorrectos");
-      }
-
-      var token  = data.access_token;
-      var userId = data.user ? data.user.id : null;
-      if (!token || !userId) {
-        throw new Error("No pudimos iniciar sesión correctamente");
-      }
-
-      try { localStorage.setItem("fundix_token", token); } catch(e) {}
-      try { localStorage.setItem("fundix_user_id", userId); } catch(e) {}
-
-      return fetchPerfilByUserId(userId, token).then(function(perfil) {
-        try { localStorage.setItem("fundix_rol", perfil.rol); } catch(e) {}
-
-        onLogin({
-          id: userId,
-          nombre: perfil.nombre || "Usuario",
-          rol: perfil.rol,
-          zona: perfil.zona || "",
-          telefono: perfil.telefono || "",
-          verified: true
-        });
-      });
+      if (data.error) throw new Error(data.error_description || data.msg || "Email o contraseña incorrectos");
+      try { safeStore.set("fundix_token", data.access_token); } catch(e) {}
+      try { safeStore.set("fundix_user_id", data.user ? data.user.id : ""); } catch(e) {}
+      onLogin(data.user);
     })
-    .catch(function(e) {
-      clearSession();
-      setError(e.message || "No pudimos iniciar sesión");
-    })
+    .catch(function(e) { setError(e.message); })
     .finally(function() { setLoading(false); });
   }
 
@@ -1327,23 +1302,23 @@ function RegisterScreen({ onBack, onDone }) {
     fetch(SUPABASE_URL + "/auth/v1/signup", {
       method: "POST",
       headers: { "apikey": SUPABASE_ANON, "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email, password: pass })
+      body: JSON.stringify({ email: email, password: pass, data: { nombre: nombre.trim(), telefono: phone.trim(), rol: rolReg, zona: zona.trim() } })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
       if (data.error) throw new Error(data.error_description || data.msg || "Error al crear cuenta");
       var token  = data.access_token;
       var userId = data.user ? data.user.id : null;
-      try { localStorage.setItem("fundix_token", token); } catch(e) {}
-      try { localStorage.setItem("fundix_user_id", userId || ""); } catch(e) {}
-      try { localStorage.setItem("fundix_rol", rolReg); } catch(e) {}
+      try { safeStore.set("fundix_token", token); } catch(e) {}
+      try { safeStore.set("fundix_user_id", userId || ""); } catch(e) {}
+      try { safeStore.set("fundix_rol", rolReg); } catch(e) {}
       return fetch(SUPABASE_URL + "/rest/v1/perfiles", {
         method: "POST",
         headers: {
           "apikey": SUPABASE_ANON,
           "Authorization": "Bearer " + token,
           "Content-Type": "application/json",
-          "Prefer": "return=minimal"
+          "Prefer": "resolution=merge-duplicates,return=minimal"
         },
         body: JSON.stringify({
           id: userId,
@@ -1430,53 +1405,40 @@ function HistorialScreen({ onBack, rol }) {
   const [loading,  setLoading]  = useState(true);
 
   React.useEffect(function(){
-    var token  = ""; var userId = "";
-    try { token  = localStorage.getItem("fundix_token")  || ""; } catch(e) {}
-    try { userId = localStorage.getItem("fundix_user_id") || ""; } catch(e) {}
+    var token  = safeStore.get("fundix_token") || "";
+    var userId = safeStore.get("fundix_user_id") || "";
     if (!userId) { setLoading(false); return; }
 
     if (rol === "comprador") {
-      // Cargar operaciones del acopiador
-      dbQuery("acopiadores", { select:"id", eq:{ perfil_id: userId }, limit:1 })
-      .then(function(data){
-        if (!data || !data.length) return [];
-        return dbQuery("operaciones", {
-          select: "*",
-          eq: { acopiador_id: data[0].id },
-          order: "created_at.desc",
-          limit: 50
-        });
-      })
+      fetch(SUPABASE_URL + "/rest/v1/operaciones?select=*&order=created_at.desc&limit=50", { headers: fundixAuthHeaders(token) })
+      .then(function(res){ if(!res.ok) throw new Error("No se pudo cargar operaciones"); return res.json(); })
       .then(function(ops){
         setVentas((ops||[]).map(function(o){
           return {
-            fecha: new Date(o.created_at).toLocaleDateString("es-AR"),
-            metal: o.metal, kg: o.kg, precio: o.precio_kg,
-            comprador: o.vendedor_nombre, total: o.total || 0,
+            fecha: o.created_at ? new Date(o.created_at).toLocaleDateString("es-AR") : "-",
+            metal: o.metal || "-", kg: Number(o.kg || 0), precio: Number(o.precio_kg || 0),
+            comprador: o.vendedor_nombre || o.zona || "Operación", total: Number(o.total || 0),
             confirmado: o.confirmada
           };
         }));
-        setLoading(false);
-      }).catch(function(){ setLoading(false); });
-    } else {
-      // Cargar publicaciones del vendedor
-      dbQuery("publicaciones", {
-        select: "*",
-        eq: { perfil_id: userId },
-        order: "created_at.desc",
-        limit: 50
       })
+      .catch(function(){ setVentas([]); })
+      .finally(function(){ setLoading(false); });
+    } else {
+      fetch(SUPABASE_URL + "/rest/v1/publicaciones?select=*&perfil_id=eq." + encodeURIComponent(userId) + "&order=created_at.desc&limit=50", { headers: fundixAuthHeaders(token) })
+      .then(function(res){ if(!res.ok) throw new Error("No se pudo cargar publicaciones"); return res.json(); })
       .then(function(pubs){
         setVentas((pubs||[]).map(function(p){
           return {
-            fecha: new Date(p.created_at).toLocaleDateString("es-AR"),
-            metal: p.metal, kg: p.kg, precio: 0,
-            comprador: p.zona, total: 0,
-            disponible: p.disponible
+            fecha: p.created_at ? new Date(p.created_at).toLocaleDateString("es-AR") : "-",
+            metal: p.metal || "-", kg: Number(p.kg || 0), precio: Number(p.precio_kg || 0),
+            comprador: p.zona || "Sin zona", total: Number(p.total_estimado || 0),
+            disponible: p.disponible !== false
           };
         }));
-        setLoading(false);
-      }).catch(function(){ setLoading(false); });
+      })
+      .catch(function(){ setVentas([]); })
+      .finally(function(){ setLoading(false); });
     }
   }, []);
 
@@ -1510,7 +1472,7 @@ function HistorialScreen({ onBack, rol }) {
                 , React.createElement('div', { style: {fontSize:11,color:"#7A7248",marginTop:2},}, v.comprador)
               )
               , React.createElement('div', { style: {textAlign:"right"},}
-                , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:600,color:"#00C896"},}, "$", v.total.toLocaleString("es-AR"))
+                , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:600,color:"#00C896"},}, rol==="comprador" ? "$" + Number(v.total||0).toLocaleString("es-AR") : (v.disponible ? "ACTIVA" : "CERRADA"))
                 , React.createElement('div', { style: {fontSize:10,color:"#7A7248",marginTop:2},}, v.fecha)
               )
             )
@@ -1569,7 +1531,7 @@ function AlertasScreen({ onBack }) {
               ))
             )
             , React.createElement('div', { style: S.label,}, "AVISAR CUANDO SUPERE ($/KG)"   )
-            , React.createElement('input', { style: {...S.input,marginBottom:14}, placeholder: "Ej: 9.000" ,})
+            , React.createElement('input', { style: {...S.input,marginBottom:14}, placeholder: "Ej: 9.000" , value: valorNuevo, onChange: function(e){ setValorNuevo(e.target.value); },})
             , React.createElement('button', { onClick: ()=>setNuevo(false), style: S.btnP,}, "Guardar alerta" )
           )
         )
@@ -2073,8 +2035,8 @@ function SumateScreen({ onBack, onDone }) {
           , React.createElement('button', { style: S.btnP, onClick: function(){
             var token = "";
             var userId = "";
-            try { token = localStorage.getItem("fundix_token") || ""; } catch(e) {}
-            try { userId = localStorage.getItem("fundix_user_id") || ""; } catch(e) {}
+            try { token = safeStore.get("fundix_token") || ""; } catch(e) {}
+            try { userId = safeStore.get("fundix_user_id") || ""; } catch(e) {}
 
             var precios = {};
             (selMetales.length > 0 ? selMetales : ["Cobre","Aluminio","Bronce"]).forEach(function(m) {
@@ -2200,8 +2162,8 @@ function ReseñaScreen({ comprador, onBack, onDone }) {
           onClick: function(){
             if (!stars) return;
             var token  = ""; var userId = "";
-            try { token  = localStorage.getItem("fundix_token")  || ""; } catch(e) {}
-            try { userId = localStorage.getItem("fundix_user_id") || ""; } catch(e) {}
+            try { token  = safeStore.get("fundix_token") || ""; } catch(e) {}
+            try { userId = safeStore.get("fundix_user_id") || ""; } catch(e) {}
             if (comprador && comprador.perfilId) {
               fetch(SUPABASE_URL + "/rest/v1/reviews", {
                 method: "POST",
@@ -2320,8 +2282,8 @@ function PanelCompradorScreen({ onBack, onSumate }) {
 
   useEffect(function() {
     var token  = ""; var userId = "";
-    try { token  = localStorage.getItem("fundix_token")  || ""; } catch(e) {}
-    try { userId = localStorage.getItem("fundix_user_id") || ""; } catch(e) {}
+    try { token  = safeStore.get("fundix_token") || ""; } catch(e) {}
+    try { userId = safeStore.get("fundix_user_id") || ""; } catch(e) {}
     if (!userId) { setLoading(false); return; }
 
     // Buscar acopiador del usuario
@@ -2395,7 +2357,7 @@ function PanelCompradorScreen({ onBack, onSumate }) {
 
     setSaving(true); setFError("");
     var token = "";
-    try { token = localStorage.getItem("fundix_token") || ""; } catch(e) {}
+    try { token = safeStore.get("fundix_token") || ""; } catch(e) {}
 
     fetch(SUPABASE_URL + "/rest/v1/operaciones", {
       method: "POST",
@@ -3065,7 +3027,14 @@ const MENSAJES_MOCK = {
   ],
 };
 
-function ChatListScreen({ onBack, onChat, rol }) {
+function formatChatTime(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "Ahora";
+  return d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+function ChatListScreen({ onBack, onChat, rol, chats }) {
+  const conversaciones = Array.isArray(chats) ? chats : [];
   return (
     React.createElement('div', { className: "fade", style: {paddingBottom:100},}
       , React.createElement('div', { style: {padding:"16px 20px 0"},}
@@ -3078,7 +3047,7 @@ function ChatListScreen({ onBack, onChat, rol }) {
         , React.createElement('div', { className: "wiz-hint",}, "Tus conversaciones con "   , rol==="comprador"?"vendedores":"compradores", ".")
       )
 
-      , CHATS_MOCK.length === 0 ? (
+      , conversaciones.length === 0 ? (
         React.createElement('div', { style: {textAlign:"center", padding:"48px 20px"},}
           , React.createElement('div', { style: {fontSize:48, marginBottom:12},}, "💬")
           , React.createElement('div', { style: {fontSize:14, fontWeight:700, color:C.text, marginBottom:6},}, "Sin mensajes todavía"  )
@@ -3086,7 +3055,7 @@ function ChatListScreen({ onBack, onChat, rol }) {
         )
       ) : (
         React.createElement('div', { style: {padding:"8px 12px"},}
-          , CHATS_MOCK.map(chat => (
+          , conversaciones.map(chat => (
             React.createElement('div', { key: chat.id, onClick: ()=>onChat(chat),
               style: {display:"flex", alignItems:"center", gap:12, padding:"14px 8px",
                 borderBottom:`1px solid ${C.border}`, cursor:"pointer"},}
@@ -3134,19 +3103,26 @@ function ChatListScreen({ onBack, onChat, rol }) {
   );
 }
 
-function ChatConversacionScreen({ chat, onBack }) {
+function ChatConversacionScreen({ chat, onBack, mensajes, onSend }) {
   const [texto, setTexto]       = useState("");
-  const [mensajes, setMensajes] = useState(MENSAJES_MOCK[_optionalChain([chat, 'optionalAccess', _14 => _14.id])] || []);
   const bottomRef = useRef(null);
+  const mensajesChat = mensajes || [];
 
   useEffect(() => {
     _optionalChain([bottomRef, 'access', _15 => _15.current, 'optionalAccess', _16 => _16.scrollIntoView, 'call', _17 => _17({behavior:"smooth"})]);
-  }, [mensajes]);
+  }, [mensajesChat]);
 
   const enviar = () => {
     if (!texto.trim()) return;
-    const nuevo = { id: mensajes.length+1, de:"yo", texto: texto.trim(), hora:"Ahora" };
-    setMensajes(prev => [...prev, nuevo]);
+    const nuevo = {
+      id: Date.now(),
+      de:"yo",
+      texto: texto.trim(),
+      hora: formatChatTime(new Date()),
+    };
+    if (typeof onSend === "function" && chat) {
+      onSend(chat, nuevo);
+    }
     setTexto("");
     setTimeout(()=> _optionalChain([bottomRef, 'access', _18 => _18.current, 'optionalAccess', _19 => _19.scrollIntoView, 'call', _20 => _20({behavior:"smooth"})]), 50);
   };
@@ -3193,7 +3169,7 @@ function ChatConversacionScreen({ chat, onBack }) {
           )
         )
 
-        , mensajes.map(m => (
+        , mensajesChat.map(m => (
           React.createElement('div', { key: m.id, style: {display:"flex",
             justifyContent: m.de==="yo" ? "flex-end" : "flex-start"},}
             , React.createElement('div', { style: {
@@ -3467,8 +3443,8 @@ function PublicarMaterialScreen({ onBack, onPublicado, userVerificado }) {
           onClick: function(){
             if (!puedePublicar) return;
             var token = ""; var userId = "";
-            try { token  = localStorage.getItem("fundix_token")  || ""; } catch(e) {}
-            try { userId = localStorage.getItem("fundix_user_id") || ""; } catch(e) {}
+            try { token  = safeStore.get("fundix_token") || ""; } catch(e) {}
+            try { userId = safeStore.get("fundix_user_id") || ""; } catch(e) {}
             fetch(SUPABASE_URL + "/rest/v1/publicaciones", {
               method: "POST",
               headers: {
@@ -3481,12 +3457,12 @@ function PublicarMaterialScreen({ onBack, onPublicado, userVerificado }) {
                 perfil_id: userId,
                 metal:     metalSel ? metalSel.symbol : "",
                 kg:        parseFloat(kg),
-                zona:      "GBA",
+                zona:      (user && user.zona) ? user.zona : "GBA",
                 nota:      nota || null,
               })
             })
-            .then(function() { setPublicado(true); })
-            .catch(function() { setPublicado(true); }); // mostrar éxito igual
+            .then(function(res) { if(!res.ok) throw new Error("No se pudo publicar"); setPublicado(true); })
+            .catch(function() { alert("No se pudo publicar el material. Revisá login, políticas RLS y tabla publicaciones."); });
           },
           style: {
             width:"100%", padding:16, borderRadius:14, border:"none", cursor: puedePublicar?"pointer":"not-allowed",
@@ -3508,20 +3484,40 @@ function PublicarMaterialScreen({ onBack, onPublicado, userVerificado }) {
 function BuscarScreen({ onBack, user }) {
   const [tab, setTab] = useState("publicaciones");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [publicaciones, setPublicaciones] = useState([]);
 
-  const publicaciones = [
-    { id:1, nombre:"Carlos M.",  zona:"Lanús",      metal:"Cu", kg:38,  tiempo:"hace 20 min",  visto:false, tel:"11-4521-8890" },
-    { id:2, nombre:"Jorge P.",   zona:"Avellaneda", metal:"Al", kg:85,  tiempo:"hace 1 hora",  visto:false, tel:"11-3344-5566" },
-    { id:3, nombre:"María G.",   zona:"Lomas",      metal:"Cu", kg:15,  tiempo:"hace 3 horas", visto:true,  tel:"11-5678-9900" },
-    { id:4, nombre:"Diego F.",   zona:"Quilmes",    metal:"Fe", kg:120, tiempo:"hace 5 horas", visto:true,  tel:null           },
-    { id:5, nombre:"Laura P.",   zona:"Banfield",   metal:"Al", kg:22,  tiempo:"ayer",         visto:true,  tel:null           },
-  ];
+  React.useEffect(function(){
+    setLoading(true);
+    setError(null);
+    fetch(SUPABASE_URL + "/rest/v1/publicaciones?select=id,metal,kg,zona,nota,created_at,perfil_id,perfiles(nombre,telefono,zona)&order=created_at.desc&limit=50", {
+      headers: fundixAuthHeaders(safeStore.get("fundix_token") || "")
+    })
+    .then(function(res){ if(!res.ok) throw new Error("No se pudieron cargar publicaciones"); return res.json(); })
+    .then(function(rows){
+      setPublicaciones((rows||[]).map(function(r){
+        const perf = Array.isArray(r.perfiles) ? r.perfiles[0] : r.perfiles || {};
+        const fecha = r.created_at ? new Date(r.created_at) : null;
+        const diffh = fecha ? Math.max(0, Math.round((Date.now() - fecha.getTime())/36e5)) : null;
+        const tiempo = diffh===null ? "recién" : diffh < 1 ? "hace unos min" : diffh < 24 ? ("hace " + diffh + " h") : "ayer";
+        return {
+          id: r.id,
+          nombre: perf.nombre || "Vendedor",
+          zona: r.zona || perf.zona || "Sin zona",
+          metal: r.metal || "",
+          kg: Number(r.kg || 0),
+          tiempo: tiempo,
+          visto: false,
+          tel: perf.telefono || null,
+          nota: r.nota || null
+        };
+      }));
+    })
+    .catch(function(e){ setError(e.message || "Error cargando publicaciones"); setPublicaciones([]); })
+    .finally(function(){ setLoading(false); });
+  }, []);
 
-  const contactos = [
-    { id:1, nombre:"Carlos M.",  zona:"Lanús",      metal:"Cu", kg:38,  tiempo:"hace 20 min",  tel:"11-4521-8890" },
-    { id:2, nombre:"María G.",   zona:"Lomas",      metal:"Cu", kg:15,  tiempo:"hace 3 horas", tel:"11-5678-9900" },
-    { id:3, nombre:"Roberto S.", zona:"Avellaneda", metal:"Pb", kg:28,  tiempo:"ayer",         tel:"11-3344-5566" },
-  ];
+  const contactos = publicaciones.filter(function(p){ return !!p.tel; }).slice(0, 20);
 
   // Kg por metal en zona esta semana
   const kgPorMetal = (METALS||[]).map(m => {
@@ -3530,7 +3526,7 @@ function BuscarScreen({ onBack, user }) {
   }).filter(m => m.total > 0);
   const kgTotal = publicaciones.reduce((a,p) => a+p.kg, 0);
 
-  const isPro = false;
+  const isPro = true;
 
   const CardVendedor = ({ v, i, bloqueado }) => {
     const metal = (METALS||[]).find(m => m.symbol === v.metal) || {};
@@ -3539,7 +3535,7 @@ function BuscarScreen({ onBack, user }) {
         , v.visto===false && React.createElement('div', { style: {position:"absolute",top:12,right:12,width:8,height:8,borderRadius:"50%",background:C.brand},})
         , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10,marginBottom:8},}
           , React.createElement('div', { style: {width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#C8A227,#8A6C10)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:C.dark,flexShrink:0},}
-            , v.nombre[0]
+            , safeText(v.nombre,"V")[0]
           )
           , React.createElement('div', { style: {flex:1},}
             , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:C.text},}, v.nombre)
@@ -3555,8 +3551,8 @@ function BuscarScreen({ onBack, user }) {
         )
         , React.createElement('div', { className: "comp-actions",}
           , v.tel ? (
-            React.createElement(React.Fragment, null, React.createElement('button', { className: "btn-call", onClick: function(){ window.location.href = "tel:"+v.tel; },}, React.createElement(Icon.Phone, null), React.createElement('span', null, "Llamar"))
-            , React.createElement('button', { className: "btn-wa", onClick: function(){ var num = (v.tel||"").replace(/[^0-9]/g,""); window.open("https://wa.me/549"+num+"?text=Hola%2C%20vi%20tu%20publicaci%C3%B3n%20en%20Fundix%20y%20me%20interesa%20tu%20material","_blank"); },}, React.createElement(Icon.MessageCircle, null), React.createElement('span', null, "WhatsApp")))
+            React.createElement(React.Fragment, null, React.createElement('button', { className: "btn-call", onClick: function(){ window.location.href = "tel:"+normalizePhone(v.tel); },}, React.createElement(Icon.Phone, null), React.createElement('span', null, "Llamar"))
+            , React.createElement('button', { className: "btn-wa", onClick: function(){ var num = normalizePhone(v.tel); window.open("https://wa.me/549"+num+"?text=Hola%2C%20vi%20tu%20publicaci%C3%B3n%20en%20Fundix%20y%20me%20interesa%20tu%20material","_blank"); },}, React.createElement(Icon.MessageCircle, null), React.createElement('span', null, "WhatsApp")))
           ) : (
             React.createElement('button', { className: "btn-call", style: {flex:1,opacity:0.5,cursor:"not-allowed"},}, React.createElement(Icon.Phone, null), React.createElement('span', null, "Contacto no disponible"  ))
           )
@@ -3570,6 +3566,8 @@ function BuscarScreen({ onBack, user }) {
       , React.createElement('div', { style: {padding:"0 20px"},}
         , React.createElement('div', { style: {fontFamily:"DM Mono,monospace",fontSize:9,color:C.brand,letterSpacing:2,marginTop:20,marginBottom:4},}, "TU ZONA · GBA SUR"    )
         , React.createElement('div', { className: "wiz-q", style: {marginBottom:16},}, "Buscar material" )
+        , loading && React.createElement('div', { style: {fontSize:12,color:C.muted,marginBottom:10},}, "Cargando publicaciones reales...")
+        , error && React.createElement('div', { style: {fontSize:12,color:"#E03050",marginBottom:10},}, error)
 
         /* Resumen zona — bloque premium */
         , React.createElement('div', { style: {borderRadius:20,overflow:"hidden",marginBottom:16,border:"1px solid rgba(200,162,39,0.15)",background:"linear-gradient(160deg,#16130A 0%,#0E0C06 100%)"},}
@@ -3631,6 +3629,7 @@ function BuscarScreen({ onBack, user }) {
 
         /* Tab publicaciones */
         , tab==="publicaciones" && (
+          !loading && publicaciones.length===0 ? React.createElement('div', { style: {background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:12,fontSize:12,color:C.muted,lineHeight:1.6},}, "Todavía no hay publicaciones reales en tu base. Cargá una publicación desde una cuenta vendedora para probar este panel.") : null,
           React.createElement(React.Fragment, null
             , publicaciones.map((v,i) => {
               const bloqueado = !isPro && i >= 3;
@@ -3638,9 +3637,9 @@ function BuscarScreen({ onBack, user }) {
             })
             , !isPro && (
               React.createElement('div', { style: {background:"linear-gradient(135deg,#1E1600,#140E00)",border:"1px solid rgba(200,162,39,0.3)",borderRadius:14,padding:16,textAlign:"center",marginTop:4},}
-                , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:C.text,marginBottom:4},}, "Estás viendo 3 de "    , publicaciones.length, " publicaciones" )
+                , React.createElement('div', { style: {fontSize:13,fontWeight:700,color:C.text,marginBottom:4},}, "Estás viendo ", Math.min(3, publicaciones.length), " de ", publicaciones.length, " publicaciones" )
                 , React.createElement('div', { style: {fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.6},}, "Con el Plan Pro ves todas en tiempo real y recibís notificaciones push al instante."              )
-                , React.createElement('button', { onClick: function(){ alert("Acceso Fundador: durante el lanzamiento todas las publicaciones son visibles. El plan Pro se activa próximamente."); }, style: {background:C.brand,color:C.dark,border:"none",borderRadius:10,padding:"10px 20px",fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"},}, "Ver Plan Pro →"   )
+                , React.createElement('button', { onClick: function(){ setTab("contactos"); }, style: {background:C.brand,color:C.dark,border:"none",borderRadius:10,padding:"10px 20px",fontFamily:"DM Sans,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"},}, "Ver contactos →"   )
               )
             )
           )
@@ -3668,9 +3667,8 @@ function BuscarScreen({ onBack, user }) {
 
 // ── MAIN ──────────────────────────────────────────────────────
 function Fundix() {
-  const savedRol = typeof localStorage !== "undefined" ? localStorage.getItem("fundix_rol") : null;
-  const savedUserId = typeof localStorage !== "undefined" ? localStorage.getItem("fundix_user_id") : null;
-  const [view,     setView]     = useState(savedUserId ? "home" : "onboarding");
+  const savedRol = safeStore.get("fundix_rol");
+  const [view,     setView]     = useState(savedRol ? "home" : "onboarding");
   const [selMetal, setSelMetal] = useState(null);
   const [selKg,    setSelKg]    = useState(null);
   const [user,     setUser]     = useState(null);
@@ -3679,6 +3677,8 @@ function Fundix() {
   const [vendedores,  setVendedores]  = useState(VENDEDORES);
   const [selComprador, setSelComprador] = useState(null);
   const [selChat,      setSelChat]      = useState(null);
+  const [chats, setChats] = useState(CHATS_MOCK);
+  const [mensajesByChat, setMensajesByChat] = useState(MENSAJES_MOCK);
   const [metals,       setMetals]       = useState(METALS);
 
   // Cargar precios reales desde Supabase al iniciar
@@ -3759,22 +3759,59 @@ function Fundix() {
   ];
 
   const gated = (dest) => user ? dest : "login";
+  const openChat = (chatBase) => {
+    if (!chatBase) return;
+    const baseId = chatBase.id || ("chat-" + String(chatBase.nombre || "nuevo").toLowerCase().replace(/\s+/g, "-"));
+    const chatId = String(baseId);
+    setChats(prev => {
+      const idx = prev.findIndex(c => String(c.id) === chatId);
+      if (idx >= 0) {
+        const next = prev.slice();
+        next[idx] = Object.assign({}, next[idx], chatBase, { id: chatId, unread: 0 });
+        return next;
+      }
+      return [{
+        id: chatId,
+        nombre: chatBase.nombre || "Nuevo chat",
+        ultimo: "Conversación iniciada",
+        hora: formatChatTime(new Date()),
+        unread: 0,
+        tipo: chatBase.tipo || "comprador",
+        online: chatBase.online !== false,
+      }].concat(prev);
+    });
+    setMensajesByChat(prev => {
+      if (prev[chatId]) return prev;
+      return Object.assign({}, prev, {
+        [chatId]: [
+          { id: Date.now(), de: "ellos", texto: "Hola, ¿coordinamos por acá?", hora: formatChatTime(new Date()) }
+        ]
+      });
+    });
+    setSelChat(Object.assign({}, chatBase, { id: chatId, unread: 0 }));
+    setView("chat-conv");
+  };
+
+  const handleSendMessage = (chat, nuevo) => {
+    if (!chat) return;
+    const chatId = String(chat.id);
+    setMensajesByChat(prev => {
+      const actual = prev[chatId] || [];
+      return Object.assign({}, prev, { [chatId]: actual.concat(nuevo) });
+    });
+    setChats(prev =>
+      prev.map(c => String(c.id) === chatId ? Object.assign({}, c, { ultimo: nuevo.texto, hora: nuevo.hora, unread: 0 }) : c)
+    );
+  };
 
   const renderView = () => {
     switch (view) {
-      case "onboarding": return React.createElement(Onboarding, { onDone: (r)=>{ setRol(r); try{localStorage.setItem("fundix_rol",r);}catch(e){} setView("home"); },});
+      case "onboarding": return React.createElement(Onboarding, { onDone: (r)=>{ setRol(r); try{safeStore.set("fundix_rol",r);}catch(e){} setView("home"); },});
       case "login":      return React.createElement(LoginScreen, {
                             onBack: ()=>setView("home"),
                             onLogin: (u)=>{
-                              setUser({
-                                name: u.nombre || "Usuario",
-                                verified: true,
-                                id: u.id,
-                                rol: u.rol,
-                                zona: u.zona || "",
-                                telefono: u.telefono || ""
-                              });
-                              setRol(u.rol || "vendedor");
+                              const nombre = _optionalChain([u, 'optionalAccess', _25 => _25.phone]) || "Usuario";
+                              setUser({name:nombre, verified:true, id:_optionalChain([u, 'optionalAccess', _26 => _26.id])});
                               setView("home");
                             },
                             onRegister: ()=>setView("register"),});
@@ -3782,7 +3819,7 @@ function Fundix() {
                             onBack: ()=>setView("login"),
                             onDone: (u)=>{
                               setUser({name:u.nombre, verified:true, rol:u.rol});
-                              try{localStorage.setItem("fundix_rol", u.rol);}catch(e){}
+                              try{safeStore.set("fundix_rol", u.rol);}catch(e){}
                               setRol(u.rol);
                               setView("home");
                             },});
@@ -3799,7 +3836,7 @@ function Fundix() {
                             onLogin: ()=>setView("login"),
                             onPublicar: ()=>setView(gated("publicar")),
                             onPanel: ()=>setView("panel"),
-                            onCambiarRol: ()=>{ clearSession(); setUser(null); setRol("vendedor"); setView("onboarding"); },});
+                            onCambiarRol: ()=>{ try{safeStore.remove("fundix_rol");}catch(e){} setRol("vendedor"); setView("onboarding"); },});
 
       case "pick-metal": return React.createElement(PickMetal, { onBack: goHome, onNext: m=>{setSelMetal(m);setView("enter-kg");},});
       case "enter-kg":   return React.createElement(EnterKg, { metal: selMetal, onBack: ()=>setView("pick-metal"), onResult: kg=>{setSelKg(kg);setView("result");},});
@@ -3809,20 +3846,20 @@ function Fundix() {
       case "ia":         return React.createElement(IAScreen, { onBack: goHome,});
 
       case "historial":  return React.createElement(HistorialScreen, { onBack: goHome, rol: rol,});
-      case "chat":       return React.createElement(ChatListScreen, { rol: rol, onBack: goHome, onChat: (c)=>{ setSelChat(c); setView("chat-conv"); },});
-      case "chat-conv":  return React.createElement(ChatConversacionScreen, { chat: selChat, onBack: ()=>setView("chat"),});
+      case "chat":       return React.createElement(ChatListScreen, { rol: rol, chats: chats, onBack: goHome, onChat: (c)=>openChat(c),});
+      case "chat-conv":  return React.createElement(ChatConversacionScreen, { chat: selChat, mensajes: mensajesByChat[String(_optionalChain([selChat, 'optionalAccess', _27 => _27.id]))] || [], onSend: handleSendMessage, onBack: ()=>setView("chat"),});
       case "alertas":    return React.createElement(AlertasScreen, { onBack: goHome,});
       case "retiro":     return React.createElement(RetiroScreen, { onBack: goHome,});
       case "b2b":        return React.createElement(B2BScreen, { onBack: goHome,});
       case "resena":        return React.createElement(ReseñaScreen, { comprador: null, onBack: ()=>setView("perfil-comprador"), onDone: goHome,});
-      case "perfil-comprador": return React.createElement(PerfilCompradorScreen, { comprador: selComprador, onBack: ()=>setView("donde"), onResena: ()=>setView("resena"), onChat: ()=>{ setSelChat(selComprador ? {...selComprador, tipo:"comprador", online:true} : CHATS_MOCK[0]); setView("chat-conv"); },});
+      case "perfil-comprador": return React.createElement(PerfilCompradorScreen, { comprador: selComprador, onBack: ()=>setView("donde"), onResena: ()=>setView("resena"), onChat: ()=>{ openChat(selComprador ? { id: selComprador.id, nombre: selComprador.name, tipo:"comprador", online:true } : CHATS_MOCK[0]); },});
       case "perfil-vendedor":  return React.createElement(PerfilVendedorScreen, { vendedor: null, onBack: ()=>setView("historial"),});
       case "insignias":  return React.createElement(InsigniasScreen, { onBack: ()=>setView(user?"profile":"home"), rol: rol,});
       case "panel":      return React.createElement(PanelCompradorScreen, { onBack: ()=>setView(user?"profile":"home"), onInsignias: ()=>setView("insignias"), onSumate: ()=>setView("sumate"),});
       
       case "planes":     return React.createElement(PlanesCompradorScreen, { onBack: ()=>setView(user?"profile":"home"),});
       case "sumate":     return React.createElement(SumateScreen, { onBack: ()=>setView("home"), onDone: (datos)=>{ setUser({name: datos.nombre || "Comprador",verified:true}); setCompradores(prev=>[...prev,{id:prev.length+1,name:datos.nombre||"Tu negocio",dist:"0 m",rating:0,reviews:0,open:true,phone:datos.whatsapp||"",domicilio:datos.retiro||false,precio:8000,address:datos.direccion||""}]); setView("panel"); },});
-      case "profile":    return React.createElement(ProfileScreen, { user: user, rol: rol, onBack: goHome, onPlanes: ()=>setView("planes"), onPanel: ()=>setView("panel"), onInsignias: ()=>setView("insignias"), onSumate: ()=>setView("sumate"), onPublicar: ()=>setView(gated("publicar")), onLogout: ()=>{ setUser(null); goHome(); }, onCambiarRol: ()=>{ clearSession(); setUser(null); setRol("vendedor"); setView("onboarding"); },});
+      case "profile":    return React.createElement(ProfileScreen, { user: user, rol: rol, onBack: goHome, onPlanes: ()=>setView("planes"), onPanel: ()=>setView("panel"), onInsignias: ()=>setView("insignias"), onSumate: ()=>setView("sumate"), onPublicar: ()=>setView(gated("publicar")), onLogout: ()=>{ safeStore.remove("fundix_token"); safeStore.remove("fundix_user_id"); safeStore.remove("fundix_rol"); setUser(null); goHome(); }, onCambiarRol: ()=>{ try{safeStore.remove("fundix_rol");}catch(e){} setRol("vendedor"); setView("onboarding"); },});
       case "publicar":   return React.createElement(PublicarMaterialScreen, { onBack: ()=>setView("profile"), onPublicado: ()=>setView("profile"),});
 
       default: return null;

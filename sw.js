@@ -1,4 +1,4 @@
-const CACHE = "fundix-v1";
+const CACHE = "fundix-v2";
 const FILES = ["/", "/index.html", "/manifest.json"];
 
 self.addEventListener("install", e => {
